@@ -3,7 +3,7 @@ import { authService, STATIC_DEV_OTP } from "../../services/auth.service";
 import { savePersistedState } from "../storage";
 
 const initialState = {
-  onboardingComplete: true,
+  onboardingComplete: false,
   isLoggedIn: false,
   mobile: "",
   otpVerified: false,

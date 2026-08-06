@@ -1,6 +1,7 @@
 import React from "react";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Text, View, StyleSheet } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import BottomTabs from "./BottomTabs";
@@ -30,25 +31,27 @@ function DrawerContent(props) {
     />
   );
   return (
-    <DrawerContentScrollView {...props} contentContainerStyle={styles.drawerContent}>
-      <View style={styles.brand}>
-        <View style={styles.avatar}><Feather name="user" size={22} color={colors.text} /></View>
-        <View style={{ flex: 1 }}>
-          <BrandName style={styles.logo} />
-          <Text numberOfLines={1} style={styles.sub}>{user.name || "Fresh grocery shopper"}</Text>
+    <SafeAreaView edges={["top", "left", "right"]} style={styles.safe}>
+      <DrawerContentScrollView {...props} contentContainerStyle={styles.drawerContent}>
+        <View style={styles.brand}>
+          <View style={styles.avatar}><Feather name="user" size={22} color={colors.text} /></View>
+          <View style={{ flex: 1 }}>
+            <BrandName style={styles.logo} />
+            <Text numberOfLines={1} style={styles.sub}>{user.name || "Fresh grocery shopper"}</Text>
+          </View>
         </View>
-      </View>
-      {item("Home", "home", () => go("Home"))}
-      {item("Categories", "grid", () => go("Categories"))}
-      {item("My Orders", "package", () => go("Orders"))}
-      {item("Wishlist", "heart", () => props.navigation.navigate("Wishlist"))}
-      {item("Addresses", "map-pin", () => props.navigation.navigate("Addresses"))}
-      {item("Wallet", "wallet", () => props.navigation.navigate("Wallet"))}
-      {item("Offers", "tag", () => props.navigation.navigate("Offers"))}
-      {item("Customer Support", "help-circle", () => props.navigation.navigate("Support"))}
-      {item("Settings", "settings", () => props.navigation.navigate("Settings"))}
-      {item("Logout", "log-out", () => dispatch(logout()), true)}
-    </DrawerContentScrollView>
+        {item("Home", "home", () => go("Home"))}
+        {item("Categories", "grid", () => go("Categories"))}
+        {item("My Orders", "package", () => go("Orders"))}
+        {item("Wishlist", "heart", () => props.navigation.navigate("Wishlist"))}
+        {item("Addresses", "map-pin", () => props.navigation.navigate("Addresses"))}
+        {item("Wallet", "wallet", () => props.navigation.navigate("Wallet"))}
+        {item("Offers", "tag", () => props.navigation.navigate("Offers"))}
+        {item("Customer Support", "help-circle", () => props.navigation.navigate("Support"))}
+        {item("Settings", "settings", () => props.navigation.navigate("Settings"))}
+        {item("Logout", "log-out", () => dispatch(logout()), true)}
+      </DrawerContentScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -61,7 +64,17 @@ function DrawerIcon({ name, danger }) {
 
 export default function AppDrawer() {
   return (
-    <Drawer.Navigator drawerContent={(props) => <DrawerContent {...props} />} screenOptions={{ headerShown: false }}>
+    <Drawer.Navigator
+      drawerContent={(props) => <DrawerContent {...props} />}
+      screenOptions={{
+        headerShown: false,
+        drawerStyle: styles.drawer,
+        drawerType: "front",
+        overlayColor: "rgba(0,0,0,0.24)",
+        swipeEdgeWidth: 32,
+        sceneContainerStyle: { backgroundColor: colors.background }
+      }}
+    >
       <Drawer.Screen name="Tabs" component={BottomTabs} />
       <Drawer.Screen name="Wishlist" component={require("../screens/wishlist/WishlistScreen").default} />
       <Drawer.Screen name="Addresses" component={AddressListScreen} />
@@ -74,12 +87,14 @@ export default function AppDrawer() {
 }
 
 const styles = StyleSheet.create({
-  drawerContent: { paddingTop: 12 },
-  brand: { flexDirection: "row", alignItems: "center", gap: 10, padding: 14, marginHorizontal: 10, borderRadius: 8, backgroundColor: "#E8F8EE", marginBottom: 8 },
-  avatar: { width: 42, height: 42, borderRadius: 21, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center" },
+  safe: { flex: 1, backgroundColor: colors.background },
+  drawer: { width: "80%", backgroundColor: colors.background },
+  drawerContent: { paddingTop: 18, paddingBottom: 24, flex: 1 },
+  brand: { flexDirection: "row", alignItems: "center", gap: 10, padding: 18, marginHorizontal: 14, borderRadius: 12, backgroundColor: "#E8F8EE", marginBottom: 10 },
+  avatar: { width: 46, height: 46, borderRadius: 23, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center" },
   logo: { fontSize: type.heading, fontWeight: "900" },
-  sub: { color: colors.muted, marginTop: 2, fontSize: type.body },
-  drawerItem: { borderRadius: 8, marginHorizontal: 8 },
-  itemIcon: { width: 22, textAlign: "center" },
-  itemLabel: { color: colors.text, fontSize: type.subheading, fontWeight: "800", marginLeft: -14 }
+  sub: { color: colors.muted, marginTop: 4, fontSize: type.body },
+  drawerItem: { borderRadius: 12, marginHorizontal: 14, marginVertical: 4, backgroundColor: colors.surface },
+  itemIcon: { width: 28, textAlign: "center" },
+  itemLabel: { color: colors.text, fontSize: type.subheading, fontWeight: "800" }
 });

@@ -8,9 +8,26 @@ import { colors } from "../../theme/colors";
 import { type } from "../../theme/typography";
 
 const slides = [
-  { icon: "🥬", title: "Just Harvst", text: "Daily essentials, farm produce and snacks delivered before your coffee cools." },
-  { icon: "📍", title: "Smart local delivery", text: "Use your current location or save multiple addresses for home, work and family." },
-  { icon: "🛍️", title: "Checkout in seconds", text: "Track orders, reorder favorites and keep your cart ready across sessions." }
+  {
+    icon: "🥬",
+    title: "Welcome to Just Harvst",
+    text: "Fresh groceries, farm produce and daily essentials delivered to your door in minutes."
+  },
+  {
+    icon: "🛒",
+    title: "Browse with ease",
+    text: "Search products, explore categories, and add favorites while you shop."
+  },
+  {
+    icon: "📦",
+    title: "Easy delivery tracking",
+    text: "Save multiple addresses, choose delivery windows, and track orders live."
+  },
+  {
+    icon: "💳",
+    title: "Fast checkout & savings",
+    text: "Use secure payments, wallet credits and quick reorder features for every purchase."
+  }
 ];
 
 export default function OnboardingScreen() {
