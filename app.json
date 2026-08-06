@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "Just Harvst",
+    "slug": "just-harvst",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F8FBF5"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#13944A"
+      },
+      "package": "com.shivam_1003.justharvst"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "6449cdbb-7ffc-4544-a92c-39a317f7ee2e"
+      }
+    },
+    "owner": "shivam_onecorp2",
+    "plugins": [
+      "expo-font"
+    ]
+  }
+}
