@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
     minWidth: 240,
     maxWidth: 310,
     height: 52,
-    borderRadius: 26,
+    borderRadius: 40,
     backgroundColor: "#218A10",
     flexDirection: "row",
     alignItems: "center",
@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
   preview: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: 12,
     backgroundColor: colors.surface,
     borderWidth: 2,
     borderColor: "#E9F8E5",
@@ -71,18 +71,18 @@ const styles = StyleSheet.create({
     justifyContent: "center"
   },
   previewOverlap: { marginLeft: -12 },
-  previewPhoto: { width: "100%", height: "100%", borderRadius: 16 },
+  previewPhoto: { width: "100%", height: "100%", borderRadius: 12 },
   previewEmoji: { fontSize: 18 },
   copy: { flex: 1, marginLeft: 4, minWidth: 0 },
-  title: { color: "#fff", fontSize: type.heading, fontWeight: "900", lineHeight: 16 },
+  title: { color: "#fff", fontSize: type.subheading, fontWeight: "900", lineHeight: 15 },
   sub: { color: "#DDFBD5", marginTop: 1, fontWeight: "700", fontSize: type.body },
   arrow: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 32,
+    height: 32,
+    borderRadius: 20,
     backgroundColor: "rgba(10, 105, 8, 0.32)",
     alignItems: "center",
     justifyContent: "center"
   },
-  arrowText: { color: "#fff", fontSize: 28, lineHeight: 31, fontWeight: "300" }
+  arrowText: { color: "#fff", fontSize: 28, lineHeight: 32, fontWeight: "300" }
 });

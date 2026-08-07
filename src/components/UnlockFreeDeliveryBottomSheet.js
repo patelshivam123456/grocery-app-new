@@ -60,7 +60,7 @@ export default function UnlockFreeDeliveryBottomSheet({ visible, onClose, subtot
 
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.72)" },
-  close: { position: "absolute", alignSelf: "center", bottom: "68%", width: 54, height: 54, borderRadius: 27, backgroundColor: "#171821", alignItems: "center", justifyContent: "center", zIndex: 2 },
+  close: { position: "absolute", alignSelf: "center", bottom: "68%", width: 54, height: 54, borderRadius: 40, backgroundColor: "#171821", alignItems: "center", justifyContent: "center", zIndex: 2 },
   closeText: { color: "#fff", fontSize: 34, lineHeight: 36 },
   sheet: { backgroundColor: "#0E131A", borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingHorizontal: 14, paddingTop: 22, paddingBottom: 34 },
   title: { color: "#fff", fontWeight: "900", fontSize: type.heading, marginBottom: 16 },

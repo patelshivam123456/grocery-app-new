@@ -181,7 +181,7 @@ export default function ProductDetailsScreen({ route, navigation }) {
 
       <View pointerEvents="box-none" style={styles.topActions}>
         <Pressable onPress={goBack} style={styles.roundAction}>
-          <Feather name="arrow-left" size={23} color={colors.text} />
+          <Feather name="arrow-left" size={18} color={colors.text} />
         </Pressable>
       </View>
       {totals.count ? <FloatingCartPill navigation={navigation} bottomOffset={86 + insets.bottom} /> : null}
@@ -429,7 +429,7 @@ const styles = StyleSheet.create({
   heroEmoji: { fontSize: 126 },
   topActions: { position: "absolute", top: 30, left: 12, zIndex: 40, elevation: 8 },
   heroActions: { position: "absolute", top: 12, right: 12, zIndex: 10, elevation: 4, flexDirection: "row", gap: 10 },
-  roundAction: { width: 38, height: 38, borderRadius: 19, backgroundColor: "rgba(255,255,255,0.92)", borderWidth: 1, borderColor: "rgba(17,24,39,0.08)", alignItems: "center", justifyContent: "center" },
+  roundAction: { width: 32, height: 32, borderRadius: 16, backgroundColor: "rgba(255,255,255,0.92)", borderWidth: 1, borderColor: "rgba(17,24,39,0.08)", alignItems: "center", justifyContent: "center" },
   dots: { position: "absolute", bottom: 44, alignSelf: "center", flexDirection: "row", gap: 5 },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#DDE0E7" },
   dotActive: { backgroundColor: "#6B7280" },
@@ -497,8 +497,8 @@ const styles = StyleSheet.create({
   sheetPurchaseBar: { zIndex: 4 },
   root: { flex: 1, backgroundColor: "#F5F6FB" },
   header: { height: 52, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, backgroundColor: colors.background, borderBottomWidth: 1, borderBottomColor: colors.faint },
-  iconCircle: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.faint },
-  backText: { fontSize: 26, lineHeight: 28, color: colors.text },
+  iconCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.faint },
+  backText: { fontSize: 20, lineHeight: 22, color: colors.text },
   headerTitle: { flex: 1, fontSize: type.heading, fontWeight: "900", color: colors.text },
   headerIcon: { fontSize: type.heading, fontWeight: "900", color: colors.text },
   content: { padding: 12, gap: 12, paddingBottom: 262 },

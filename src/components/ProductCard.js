@@ -26,6 +26,8 @@ function ProductCard({ product, onPress, compact = false, grid = false, railGrid
   const gallery = displayProduct.imageGallery?.length ? displayProduct.imageGallery : product.imageGallery || [];
   const [imageIndex, setImageIndex] = React.useState(0);
   const activeImage = gallery[imageIndex] || displayProduct.image;
+  const discountValue = parseInt(displayProduct.discount, 10);
+  const hasDiscount = Number.isFinite(discountValue) && discountValue > 0;
 
   React.useEffect(() => {
     setImageIndex(0);
@@ -42,7 +44,7 @@ function ProductCard({ product, onPress, compact = false, grid = false, railGrid
   return (
     <Pressable onPress={onPress} style={[styles.card, compact && styles.compact, grid && styles.gridCard, railGrid && styles.railGridCard]}>
       <View style={styles.imageWrap}>
-        {displayProduct.discount ? (
+        {hasDiscount ? (
           <View style={styles.discountBadge}>
             <Text numberOfLines={1} style={styles.discountBadgeText}>{displayProduct.discount} OFF</Text>
           </View>
@@ -87,15 +89,15 @@ const styles = StyleSheet.create({
   card: {
     width: 118,
     backgroundColor: "transparent",
-    borderRadius: 8,
+    borderRadius: 12,
     gap: 4,
     minHeight: 210
   },
   compact: { width: "48%" },
   gridCard: { width: "31.7%" },
   railGridCard: { width: "47.5%" },
-  imageWrap: { height: 106, alignItems: "center", justifyContent: "center", backgroundColor: "#F6F6FA", borderRadius: 8, overflow: "visible", borderWidth: 1, borderColor: colors.faint },
-  photo: { width: "100%", height: "100%", borderRadius: 8 },
+  imageWrap: { height: 106, alignItems: "center", justifyContent: "center", backgroundColor: "#F6F6FA", borderRadius: 12, overflow: "visible", borderWidth: 1, borderColor: colors.faint },
+  photo: { width: "100%", height: "100%", borderRadius: 12 },
   overlayColumn: { position: "absolute", top: 5, right: 5, zIndex: 2, gap: 5 },
   iconButton: { width: 24, height: 24, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.96)", alignItems: "center", justifyContent: "center" },
   discountBadge: { position: "absolute", top: 6, left: 6, zIndex: 2, maxWidth: 72, minHeight: 22, borderRadius: 11, backgroundColor: colors.primary, paddingHorizontal: 7, alignItems: "center", justifyContent: "center" },
@@ -105,13 +107,13 @@ const styles = StyleSheet.create({
   qty: { flex: 1, color: colors.text, fontSize: type.body, fontWeight: "900" },
   name: {  color: colors.info, fontWeight: "900", fontSize: 11 },
   priceRow: { flexDirection: "row", alignItems: "baseline", gap: 3, minWidth: 0 },
-  price: { color: colors.text, fontWeight: "900", fontSize: type.heading, flexShrink: 0 },
+  price: { color: colors.text, fontWeight: "600", fontSize: type.subheading, flexShrink: 0 },
   mrp: { color: colors.muted, textDecorationLine: "line-through", fontSize: type.body, flexShrink: 1 },
-  addCircle: { position: "absolute", right: -3, bottom: -13, zIndex: 3, width: 34, height: 34, borderRadius: 17, borderWidth: 1, borderColor: "rgba(255,255,255,0.85)", backgroundColor: "rgba(0,0,0,0.68)", alignItems: "center", justifyContent: "center" },
-  addPlus: { color: "#fff", fontSize: 28, lineHeight: 30, fontWeight: "900" },
+  addCircle: { position: "absolute", right: -3, bottom: -10, zIndex: 3, width: 28, height: 28, borderRadius: 14, borderWidth: 1, borderColor: "rgba(255,255,255,0.85)", backgroundColor: "rgba(0,0,0,0.68)", alignItems: "center", justifyContent: "center" },
+  addPlus: { color: "#fff", fontSize: 24, lineHeight: 26, fontWeight: "900" },
   stepper: { position: "absolute", right: -3, bottom: -13, zIndex: 3, width: 74, height: 32, borderRadius: 17, borderWidth: 1, borderColor: "rgba(255,255,255,0.85)", backgroundColor: "rgba(0,0,0,0.68)", flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 6 },
   stepBtn: { width: 20, alignItems: "center" },
-  stepText: { color: "#fff", fontSize: type.subheading, fontWeight: "900" },
+  stepText: { color: "#fff", fontSize: type.heading, fontWeight: "900" },
   stepQty: { color: "#fff", fontWeight: "900", fontSize: type.body },
   meta: { color: colors.muted, fontWeight: "800", fontSize: type.body }
 });

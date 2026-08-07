@@ -17,7 +17,7 @@ export default function OrderStatusBottomBar({ navigation, bottomOffset }) {
   return (
     <Pressable
       onPress={() => navigation.getParent()?.navigate("Orders", { screen: "Tracking", params: { orderId: order.id } })}
-      style={[styles.bar, { bottom: insets.bottom }]}
+      style={[styles.bar, { bottom: bottomOffset == null ? 6 + insets.bottom : bottomOffset }]}
     >
       <View style={styles.icon}><Feather name="truck" size={19} color={colors.primary} /></View>
       <View style={styles.copy}>
@@ -30,7 +30,7 @@ export default function OrderStatusBottomBar({ navigation, bottomOffset }) {
 }
 
 const styles = StyleSheet.create({
-  bar: {width:"100%", position: "absolute", left: 0, right: 0, minHeight: 40, borderRadius: 30,  backgroundColor: colors.primary, flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 9, gap: 10, shadowColor: "#073D21", shadowOpacity: 0.2, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 8, zIndex: 30, },
+  bar: {width:"100%", position: "absolute", left: 0, right: 0, minHeight: 40, borderRadius: 40,  backgroundColor: colors.primary, flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 9, gap: 10, shadowColor: "#073D21", shadowOpacity: 0.2, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 8, zIndex: 30, },
   icon: { width: 22, height: 22, borderRadius: 8, backgroundColor: "#F5FFF7", alignItems: "center", justifyContent: "center" },
   copy: { flex: 1, minWidth: 0 },
   title: { color: "#fff", fontSize: type.subheading, fontWeight: "900" },

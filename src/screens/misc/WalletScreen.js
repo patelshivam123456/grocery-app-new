@@ -29,7 +29,7 @@ export default function WalletScreen({ navigation }) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingBottom: 28 + insets.bottom }]}>
         <View style={styles.header}>
           <Pressable onPress={() => (navigation?.canGoBack?.() ? navigation.goBack() : navigation?.navigate?.("Tabs", { screen: "Home" }))} style={styles.iconCircle}>
-            <Feather name="arrow-left" size={22} color={colors.text} />
+            <Feather name="arrow-left" size={18} color={colors.text} />
           </Pressable>
           <Text style={styles.headerTitle}>Fresh Money</Text>
           <View style={styles.iconCircle}>
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#F5F6FB" },
   content: { padding: 12, gap: 12 },
   header: { minHeight: 44, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  iconCircle: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.faint, alignItems: "center", justifyContent: "center" },
+  iconCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.faint, alignItems: "center", justifyContent: "center" },
   headerTitle: { color: colors.text, fontSize: 20, fontWeight: "900" },
   balanceCard: { borderRadius: 8, backgroundColor: "#FFD35A", padding: 16, gap: 14 },
   balanceTop: { flexDirection: "row", alignItems: "center", gap: 12 },

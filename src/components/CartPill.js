@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
 
   flex: 1,
   height: 54,
-  borderRadius: 10,
+  borderRadius: 40,
   backgroundColor: "#218A10",
 
   flexDirection: "row",
@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
   previewOverlap: { marginLeft: -12 },
   previewEmoji: { fontSize: 18 },
   copy: { flex: 1, marginLeft: 4, minWidth: 0 },
-  title: { color: "#fff", fontSize: type.heading, fontWeight: "900", lineHeight: 16 },
+  title: { color: "#fff", fontSize: type.subheading, fontWeight: "900", lineHeight: 15 },
   sub: { color: "#DDFBD5", marginTop: 1, fontWeight: "700", fontSize: type.body },
   arrow: {
     width: 42,

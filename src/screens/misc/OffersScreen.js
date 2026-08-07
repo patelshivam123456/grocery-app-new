@@ -28,7 +28,7 @@ export default function OffersScreen({ navigation }) {
     <SafeAreaView edges={["top", "left", "right"]} style={styles.safe}>
       <View style={styles.header}>
         <Pressable onPress={goBack} style={styles.iconCircle}>
-          <Feather name="arrow-left" size={22} color={colors.text} />
+          <Feather name="arrow-left" size={18} color={colors.text} />
         </Pressable>
         <Text style={styles.headerTitle}>Offers</Text>
         <View style={styles.iconCircle}>
@@ -57,7 +57,7 @@ export default function OffersScreen({ navigation }) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#F5F6FB" },
   header: { minHeight: 52, flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12, backgroundColor: colors.background, borderBottomWidth: 1, borderBottomColor: colors.faint },
-  iconCircle: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.faint, alignItems: "center", justifyContent: "center" },
+  iconCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.faint, alignItems: "center", justifyContent: "center" },
   headerTitle: { flex: 1, color: colors.text, fontSize: type.heading, fontWeight: "900" },
   content: { padding: 12, gap: 12 },
   offer: { backgroundColor: "#FFF2D3", borderRadius: 8, padding: 12, borderWidth: 1, borderColor: "#F5D47C" },

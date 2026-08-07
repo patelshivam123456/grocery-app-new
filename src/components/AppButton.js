@@ -24,7 +24,7 @@ export default function AppButton({ title, onPress, variant = "primary", loading
 const styles = StyleSheet.create({
   button: {
     minHeight: 42,
-    borderRadius: 8,
+    borderRadius: 12,
     backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
@@ -33,6 +33,6 @@ const styles = StyleSheet.create({
   ghost: { backgroundColor: "transparent" },
   outline: { backgroundColor: "transparent", borderWidth: 1, borderColor: colors.primary },
   pressed: { opacity: 0.8 },
-  text: { color: "#fff", fontWeight: "800", fontSize: type.heading },
+  text: { color: "#fff", fontWeight: "600", fontSize: type.heading },
   altText: { color: colors.primary }
 });

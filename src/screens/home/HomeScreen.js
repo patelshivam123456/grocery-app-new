@@ -102,7 +102,14 @@ export default function HomeScreen({ navigation }) {
         </Pressable>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickTabs}>
           {homeTabs.map((tab) => (
-            <Pressable key={tab.id} onPress={() => setActiveTab(tab.id)} style={styles.quickTab}>
+            <Pressable
+              key={tab.id}
+              onPress={() => {
+                if (tab.id === "all") setActiveTab(tab.id);
+                else navigation.getParent()?.navigate("Categories", { screen: "ProductList", params: { categoryId: tab.id, categoryName: tab.label } });
+              }}
+              style={styles.quickTab}
+            >
               <SafeRemoteImage uri={tab.iconUrl} style={styles.quickPhoto} fallback="▣" fallbackStyle={styles.quickIcon} />
               <Text style={[styles.quickLabel, activeTab === tab.id && styles.quickActive]}>{tab.label}</Text>
               {activeTab === tab.id ? <View style={styles.quickUnderline} /> : null}
@@ -143,7 +150,7 @@ export default function HomeScreen({ navigation }) {
         <ProductGridSection title="Recommended products" products={[...filteredProducts].reverse().slice(0, 6)} onPress={goProduct} onViewDetails={openQuick} onSeeAll={openProductsSection} />
         {recent.length && activeTab === "all" ? <ProductGridSection title="Recently viewed" products={recent.slice(0, 6)} onPress={goProduct} onViewDetails={openQuick} onSeeAll={openProductsSection} /> : null}
       </ScrollView>
-      <CommerceBottomStack navigation={navigation} bottomOffset={insets.bottom}/>
+      <CommerceBottomStack navigation={navigation} />
       <LocationSheet visible={locationOpen} onClose={() => setLocationOpen(false)} />
       <ProductQuickViewSheet
         visible={!!quickProduct}
@@ -178,11 +185,11 @@ const styles = StyleSheet.create({
   headerWrap: { backgroundColor: "#FFD35A", paddingHorizontal: 12, paddingTop: 6, paddingBottom: 8, gap: 8, borderBottomWidth: 1, borderBottomColor: "#E7C149" },
   topRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   deliveryCopy: { flex: 1, minWidth: 0 },
-  brand: { fontSize: type.heading, fontWeight: "900", color: colors.text },
+  brand: { fontSize: type.heading, fontWeight: "600", color: colors.text },
   brandJust: { color: "#000000" },
   brandHarvst: { color: "#2E7D32" },
   timeRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 1 },
-  time: { fontSize: type.heading, fontWeight: "900", color: colors.text },
+  time: { fontSize: type.heading, fontWeight: "600", color: colors.text },
   distanceChip: { maxWidth: 104, flexDirection: "row", alignItems: "center", gap: 3, backgroundColor: "#FFF6CC", borderRadius: 10, paddingHorizontal: 6, paddingVertical: 3 },
   distanceIcon: { color: colors.primaryDark, fontSize: type.body, fontWeight: "900" },
   distanceText: { color: colors.primaryDark, fontSize: type.body, fontWeight: "900", flexShrink: 1 },
@@ -202,21 +209,21 @@ const styles = StyleSheet.create({
   quickUnderline: { height: 3, width: 38, borderRadius: 2, backgroundColor: colors.text, marginTop: 5 },
   content: { padding: 12, gap: 12, paddingBottom: bottomStackHeight },
   bannerRow: { gap: 8 },
-  banner: { width: 220, minHeight: 90, borderRadius: 8, padding: 12, justifyContent: "center" },
-  bannerTitle: { fontSize: type.heading, fontWeight: "900", color: colors.text, marginTop: 6 },
+  banner: { width: 220, minHeight: 90, borderRadius: 12, padding: 12, justifyContent: "center" },
+  bannerTitle: { fontSize: type.heading, fontWeight: "600", color: colors.text, marginTop: 6 },
   bannerSub: { color: colors.muted, marginTop: 4, lineHeight: 15, fontSize: type.subheading },
   bannerCta: { marginTop: 10, color: colors.primaryDark, fontWeight: "900", fontSize: type.subheading },
   catGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-start", columnGap: 6, rowGap: 8 },
   cat: { width: "23.5%", alignItems: "center" },
-  catImage: { width: "100%", aspectRatio: 1.05, borderRadius: 8, backgroundColor: "#E7F5F2", alignItems: "center", justifyContent: "center" },
+  catImage: { width: "100%", aspectRatio: 1.05, borderRadius: 12, backgroundColor: "#E7F5F2", alignItems: "center", justifyContent: "center", overflow: "hidden" },
   catIcon: { fontSize: 34 },
-  catPhoto: { width: "100%", height: "100%" },
+  catPhoto: { width: "100%", height: "100%", borderRadius: 12 },
   catText: { marginTop: 5, fontWeight: "600", color: colors.text, textAlign: "center", fontSize: 10, lineHeight: 14 },
   errorText: { color: colors.danger, fontSize: type.body, fontWeight: "800", textAlign: "center" },
-  greenBanner: { minHeight: 116, borderRadius: 8, padding: 14, backgroundColor: "#48D66A", justifyContent: "center" },
-  freeTitle: { color: "#4B210C", fontWeight: "900", fontSize: type.heading },
+  greenBanner: { minHeight: 116, borderRadius: 12, padding: 14, backgroundColor: "#48D66A", justifyContent: "center" },
+  freeTitle: { color: "#4B210C", fontWeight: "600", fontSize: type.heading },
   freeSub: { color: "#4B210C", fontWeight: "800", marginTop: 4, textTransform: "uppercase", fontSize: type.body },
-  freeButton: { marginTop: 12, alignSelf: "flex-start", backgroundColor: "#5B311B", color: "#fff", overflow: "hidden", borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, fontWeight: "900", fontSize: type.body },
+  freeButton: { marginTop: 12, alignSelf: "flex-start", backgroundColor: "#5B311B", color: "#fff", overflow: "hidden", borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, fontWeight: "900", fontSize: type.body },
   rail: { gap: 8 },
   productGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-start", columnGap: 8, rowGap: 8 }
 });

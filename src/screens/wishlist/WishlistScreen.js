@@ -60,7 +60,7 @@ export default function WishlistScreen({ navigation }) {
 function WishlistHeader({ goBack, address, openLocation }) {
   return (
     <View style={styles.header}>
-      <Pressable onPress={goBack} style={styles.back}><Feather name="arrow-left" size={23} color={colors.text} /></Pressable>
+      <Pressable onPress={goBack} style={styles.back}><Feather name="arrow-left" size={18} color={colors.text} /></Pressable>
       <View style={{ flex: 1 }}>
         <Text style={styles.title}>Your wishlist</Text>
         <Pressable onPress={openLocation}>
@@ -145,11 +145,11 @@ function WishlistItem({ product, qty, onOpen, onAdd, onDec, onRemove }) {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
   header: { minHeight: 58, flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: colors.faint },
-  back: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.faint, alignItems: "center", justifyContent: "center" },
+  back: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.faint, alignItems: "center", justifyContent: "center" },
   title: { color: colors.text, fontSize: type.heading, fontWeight: "900" },
   location: { color: colors.text, fontSize: type.subheading, marginTop: 1 },
   delivering: { color: "#047B7F", fontWeight: "900" },
-  search: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.faint, alignItems: "center", justifyContent: "center" },
+  search: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.faint, alignItems: "center", justifyContent: "center" },
   content: { padding: 12, paddingBottom: bottomStackHeight },
   grid: {
   flexDirection: "row",

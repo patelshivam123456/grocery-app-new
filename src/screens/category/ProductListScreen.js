@@ -1,13 +1,11 @@
 import React from "react";
-import { ActivityIndicator, Modal, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
-import LocationSheet from "../../components/LocationSheet";
 import FloatingCartPill from "../../components/FloatingCartPill";
 import ProductCard from "../../components/ProductCard";
 import ProductQuickViewSheet from "../../components/ProductQuickViewSheet";
 import SafeRemoteImage from "../../components/SafeRemoteImage";
-import { selectSelectedAddress } from "../../store/selectors";
 import { fetchProductsForCategory, setSort } from "../../store/slices/productSlice";
 import { colors } from "../../theme/colors";
 import { type } from "../../theme/typography";
@@ -263,14 +261,12 @@ export default function ProductListScreen({ route, navigation }) {
   const title = params.title || params.categoryName || category?.name || "Products";
   const productIds = Array.isArray(params.productIds) ? params.productIds : [];
   const categoryIds = Array.isArray(params.categoryIds) ? params.categoryIds : params.categoryId ? [params.categoryId] : [];
-  const selectedAddress = useSelector(selectSelectedAddress);
   const products = useSelector((state) => state.products.items);
   const loading = useSelector((state) => state.products.productsLoading);
   const error = useSelector((state) => state.products.error);
   const sort = useSelector((state) => state.products.sort);
   const [section, setSection] = React.useState("All");
   const [query, setQuery] = React.useState("");
-  const [locationOpen, setLocationOpen] = React.useState(false);
   const [sortOpen, setSortOpen] = React.useState(false);
   const [filterOpen, setFilterOpen] = React.useState(false);
   const [filterGroup, setFilterGroup] = React.useState("Type");
@@ -352,7 +348,6 @@ export default function ProductListScreen({ route, navigation }) {
   if (sort === "priceHigh") list = [...list].sort((a, b) => b.price - a.price);
   if (sort === "discount") list = [...list].sort((a, b) => parseInt(b.discount, 10) - parseInt(a.discount, 10));
 
-  const addressLine = `${selectedAddress?.label || "Other"}: ${selectedAddress?.line1 || "Add delivery address"}`;
   const openFilter = (groupName = "Type") => {
     setFilterGroup(groupName);
     setFilterOpen(true);
@@ -370,27 +365,16 @@ export default function ProductListScreen({ route, navigation }) {
         </Pressable>
         <View style={styles.headerTextWrap}>
           <Text style={styles.headerTitle}>{title}</Text>
-          <Pressable onPress={() => setLocationOpen(true)} style={styles.locationRow}>
-            <Text numberOfLines={1} style={styles.locationText}>Delivering to {addressLine}</Text>
-            <Text style={styles.chevron}>⌄</Text>
-          </Pressable>
         </View>
         <Pressable onPress={openSearch} style={styles.circleButton}>
           <Text style={styles.headerAction}>⌕</Text>
-        </Pressable>
-        <Pressable onPress={() => Share.share({ message: `Shop ${title} on Just Harvst.` })} style={styles.circleButton}>
-          <Text style={styles.headerAction}>↗</Text>
         </Pressable>
       </View>
 
       <View style={styles.main}>
         <View style={styles.content}>
-          <View style={styles.searchBox}>
-            <Text style={styles.searchIcon}>⌕</Text>
-            <TextInput value={query} onChangeText={setQuery} placeholder={`Search in ${title}`} placeholderTextColor={colors.muted} style={styles.searchInput} />
-          </View>
           <View style={styles.catalogBody}>
-            <View style={{width:"25%"}}>
+            <View style={styles.sideColumn}>
             <ScrollView style={styles.sideRail} contentContainerStyle={styles.sideRailContent} showsVerticalScrollIndicator={false}>
               {categoryOptions.map((item) => {
                 const active = item.value === section;
@@ -405,7 +389,7 @@ export default function ProductListScreen({ route, navigation }) {
               })}
             </ScrollView>
             </View>
-            <View style={{width:"75%"}}>
+            <View style={styles.listColumn}>
             <View style={styles.listPane}>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroller} contentContainerStyle={styles.chipRow}>
                 <Pressable onPress={() => openFilter("Type")} style={[styles.filterChip, activeFilterCount && styles.filterChipActive]}>
@@ -454,8 +438,7 @@ export default function ProductListScreen({ route, navigation }) {
         </View>
       </View>
 
-      <FloatingCartPill navigation={navigation} bottomOffset={86 + insets.bottom} />
-      <LocationSheet visible={locationOpen} onClose={() => setLocationOpen(false)} />
+      <FloatingCartPill navigation={navigation} bottomOffset={6 + insets.bottom} />
       <SortSheet
         visible={sortOpen}
         selected={sort}
@@ -491,33 +474,32 @@ export default function ProductListScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#F7FBF1",paddingBottom:10 },
   header: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: "#FFFDF2", borderBottomWidth: 1, borderBottomColor: colors.faint },
-  circleButton: { width: 42, height: 42, borderRadius: 21, backgroundColor: "#fff", borderWidth: 1, borderColor: colors.faint, alignItems: "center", justifyContent: "center" },
-  headerIcon: { fontSize: 26, color: colors.text, lineHeight: 28 },
+  circleButton: { width: 32, height: 32, borderRadius: 16, backgroundColor: "#fff", borderWidth: 1, borderColor: colors.faint, alignItems: "center", justifyContent: "center" },
+  headerIcon: { fontSize: 20, color: colors.text, lineHeight: 22 },
   headerAction: { fontSize: 18, color: colors.text, fontWeight: "800" },
   headerTextWrap: { flex: 1 },
-  headerTitle: { fontSize: type.heading, fontWeight: "900", color: colors.text },
-  locationRow: { flexDirection: "row", alignItems: "center", gap: 3, marginTop: 2 },
-  locationText: { flex: 1, fontSize: type.body, color: colors.primary, fontWeight: "800" },
-  chevron: { fontSize: type.body, color: colors.text, fontWeight: "900" },
+  headerTitle: { fontSize: type.heading, fontWeight: "600", color: colors.text },
   main: { flex: 1 },
   catalogBody: { flex: 1, flexDirection: "row", backgroundColor: "#F4FAE7",paddingTop: 0 },
+  sideColumn: { width: "25%" },
+  listColumn: { width: "75%" },
   sideRail: { width: 80, backgroundColor: colors.surface, borderRightWidth: 1, borderRightColor: colors.faint },
   sideRailContent: { paddingTop: 0, paddingBottom: 170 },
-  railTab: { minHeight: 104, alignItems: "center", justifyContent: "center", paddingHorizontal: 4, paddingVertical: 8, borderRightWidth: 4, borderRightColor: "transparent" },
+  railTab: { minHeight: 78, alignItems: "center", justifyContent: "center", paddingHorizontal: 2, paddingVertical: 4, borderRightWidth: 4, borderRightColor: "transparent" },
   railTabActive: { backgroundColor: "#F0FFF0", borderRightColor: colors.primary },
-  railImageWrap: { width: 52, height: 52, borderRadius: 26, backgroundColor: "#F6F8FC", alignItems: "center", justifyContent: "center", overflow: "hidden", marginBottom: 6 },
+  railImageWrap: { width: 38, height: 38, borderRadius: 19, backgroundColor: "#F6F8FC", alignItems: "center", justifyContent: "center", overflow: "hidden", marginBottom: 2 },
   railPhoto: { width: "100%", height: "100%" },
-  railEmojiLarge: { fontSize: 28 },
-  railLabel: { color: colors.muted, fontSize: type.body, lineHeight: 14, fontWeight: "800", textAlign: "center" },
+  railEmojiLarge: { fontSize: 22 },
+  railLabel: { color: colors.muted, fontSize: type.body, lineHeight: 11, fontWeight: "800", textAlign: "center" },
   railLabelActive: { color: colors.text, fontWeight: "900" },
   listPane: { flex: 1, minWidth: 0, backgroundColor: "#F4FAE7" },
   content: { flex: 1, backgroundColor: "#F4FAE7" },
   searchBox: { height: 44, marginHorizontal: 12, marginTop: 10, borderRadius: 12, backgroundColor: "#fff", borderWidth: 1, borderColor: colors.faint, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12 },
   searchInput: { flex: 1, color: colors.text, fontSize: type.subheading, paddingVertical: 0 },
-  chipScroller: { flexGrow: 0, height: 54 },
-  chipRow: { gap: 7,  paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.faint },
-  filterChip: { height: 38, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1, borderColor: colors.faint, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
-  filterChipText: { fontSize: type.subheading, color: colors.text, fontWeight: "900" },
+  chipScroller: { flexGrow: 0, height: 48 },
+  chipRow: { gap: 7,  paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: colors.faint },
+  filterChip: { height: 36, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1, borderColor: colors.faint, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
+  filterChipText: { fontSize: type.body, color: colors.text, fontWeight: "800" },
   filterChipActive: { borderColor: colors.primary, backgroundColor: "#EAFBEF" },
   filterChipTextActive: { color: colors.primaryDark },
   activeChipRow: { gap: 8, paddingHorizontal: 8, paddingBottom: 8, backgroundColor: "#fff" },
@@ -556,8 +538,8 @@ const styles = StyleSheet.create({
   empty: { marginTop: 20, textAlign: "center", color: colors.muted, fontSize: type.body },
   errorText: { marginTop: 12, textAlign: "center", color: colors.danger, fontSize: type.body, fontWeight: "800" },
   sheetOverlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.72)" },
-  closeFloat: { position: "absolute", alignSelf: "center", bottom: "58%", width: 54, height: 54, borderRadius: 27, backgroundColor: "#171821", alignItems: "center", justifyContent: "center", zIndex: 2 },
-  closeText: { color: "#fff", fontSize: 32, lineHeight: 34 },
+  closeFloat: { position: "absolute", alignSelf: "center", bottom: "78%", width: 40, height: 40, borderRadius: 20, backgroundColor: "#171821", alignItems: "center", justifyContent: "center", zIndex: 2 },
+  closeText: { color: "#fff", fontSize: 24, lineHeight: 26 },
   sortSheet: { backgroundColor: "#fff", borderTopLeftRadius: 18, borderTopRightRadius: 18, paddingTop: 22, paddingHorizontal: 18, paddingBottom: 34 },
   filterSheet: { maxHeight: "78%", backgroundColor: "#F7F8FE", borderTopLeftRadius: 18, borderTopRightRadius: 18, paddingTop: 18, paddingHorizontal: 14, paddingBottom: 14 },
   sheetTitle: { fontSize: type.heading, color: colors.text, fontWeight: "900", marginBottom: 14 },

@@ -1,5 +1,5 @@
 import React from "react";
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Animated, Dimensions, Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import * as Location from "expo-location";
 import { useDispatch, useSelector } from "react-redux";
 import { selectAddress, setCoordinates, setPermission, upsertAddress } from "../store/slices/locationSlice";
@@ -15,6 +15,15 @@ export default function LocationSheet({ visible, onClose }) {
   const [adding, setAdding] = React.useState(false);
   const [form, setForm] = React.useState({ label: "Home", line1: "", city: "", pincode: "" });
   const [locating, setLocating] = React.useState(false);
+  const slide = React.useRef(new Animated.Value(Dimensions.get("window").width)).current;
+
+  React.useEffect(() => {
+    Animated.timing(slide, {
+      toValue: visible ? 0 : Dimensions.get("window").width,
+      duration: 260,
+      useNativeDriver: true
+    }).start();
+  }, [slide, visible]);
 
   const useCurrent = async () => {
     try {
@@ -58,12 +67,14 @@ export default function LocationSheet({ visible, onClose }) {
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <Pressable style={styles.dim} onPress={onClose} />
-        <Pressable onPress={onClose} style={styles.close}><Text style={styles.closeText}>×</Text></Pressable>
-        <View style={styles.sheet}>
-          <Text style={styles.title}>Select delivery location</Text>
+        <Animated.View style={[styles.sheet, { transform: [{ translateX: slide }] }]}>
+          <View style={styles.header}>
+            <Pressable onPress={onClose} style={styles.close}><Text style={styles.closeText}>‹</Text></Pressable>
+            <Text style={styles.title}>Select delivery location</Text>
+          </View>
           <View style={styles.search}>
             <Text style={styles.searchIcon}>⌕</Text>
             <TextInput placeholder="Search for area, street name..." placeholderTextColor={colors.muted} style={styles.searchInput} />
@@ -128,19 +139,20 @@ export default function LocationSheet({ visible, onClose }) {
               <Text style={styles.chev}>›</Text>
             </Pressable>
           ))}
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: "flex-end" },
+  overlay: { flex: 1, alignItems: "flex-end" },
   dim: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.62)" },
-  close: { alignSelf: "center", marginBottom: -20, zIndex: 2, width: 54, height: 54, borderRadius: 27, backgroundColor: "#202027", alignItems: "center", justifyContent: "center" },
-  closeText: { color: "#fff", fontSize: 32, lineHeight: 34, fontWeight: "700" },
-  sheet: { maxHeight: "78%", backgroundColor: "#F4F5FA", borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 14, gap: 12 },
-  title: { color: colors.text, fontSize: type.heading, fontWeight: "900" },
+  header: { minHeight: 44, flexDirection: "row", alignItems: "center", gap: 10 },
+  close: { width: 32, height: 32, borderRadius: 12, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.faint, alignItems: "center", justifyContent: "center" },
+  closeText: { color: colors.text, fontSize: 24, lineHeight: 26, fontWeight: "600" },
+  sheet: { width: "100%", height: "100%", backgroundColor: "#F4F5FA", padding: 14, gap: 12 },
+  title: { color: colors.text, fontSize: type.heading, fontWeight: "600" },
   search: { height: 44, borderRadius: 12, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.faint, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12 },
   searchIcon: { fontSize: 20, color: colors.text },
   searchInput: { flex: 1, color: colors.text, fontSize: type.subheading },
@@ -159,7 +171,7 @@ const styles = StyleSheet.create({
   saved: { color: colors.muted, fontSize: type.subheading, fontWeight: "800" },
   addressCard: { borderRadius: 12, backgroundColor: colors.surface, padding: 12, flexDirection: "row", gap: 12, alignItems: "flex-start" },
   formCard: { backgroundColor: colors.surface, borderRadius: 12, padding: 12, gap: 10 },
-  formInput: { height: 44, borderRadius: 8, borderWidth: 1, borderColor: colors.faint, paddingHorizontal: 12, color: colors.text, fontSize: type.body },
+  formInput: { height: 44, borderRadius: 12, borderWidth: 1, borderColor: colors.faint, paddingHorizontal: 12, color: colors.text, fontSize: type.body },
   mapBadge: { width: 56, height: 56, borderRadius: 10, backgroundColor: "#EAFBEF", alignItems: "center", justifyContent: "center" },
   pin: { fontSize: 22 },
   tick: { position: "absolute", top: -6, left: -6, width: 20, height: 20, borderRadius: 10, backgroundColor: colors.success, color: "#fff", textAlign: "center", fontSize: type.body, fontWeight: "900" },

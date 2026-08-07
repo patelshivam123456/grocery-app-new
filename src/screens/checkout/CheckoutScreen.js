@@ -231,8 +231,8 @@ function BillRow({ label, value }) {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#F4F5FA" },
   header: { height: 52, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, backgroundColor: colors.background, borderBottomWidth: 1, borderBottomColor: colors.faint },
-  iconCircle: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.faint },
-  backText: { fontSize: 26, lineHeight: 28, color: colors.text },
+  iconCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.faint },
+  backText: { fontSize: 20, lineHeight: 22, color: colors.text },
   headerTitle: { flex: 1, minWidth: 0, fontSize: type.heading, fontWeight: "900", color: colors.text },
   content: { padding: 12, gap: 10, paddingBottom: 92 },
   card: { backgroundColor: colors.surface, borderRadius: 8, padding: 12, gap: 9, borderWidth: 1, borderColor: colors.faint },

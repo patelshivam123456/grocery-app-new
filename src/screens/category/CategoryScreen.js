@@ -62,15 +62,15 @@ const styles = StyleSheet.create({
   imageBox: {
     width: "100%",
     aspectRatio: 1,
-    borderRadius: 8,
+    borderRadius: 20,
     backgroundColor: "#E8F6F2",
     borderWidth: 1,
     borderColor: "#DCEFEB",
     alignItems: "center",
     justifyContent: "center"
   },
-  icon: { fontSize: 30 },
-  photo: { width: "100%", height: "100%" },
+  icon: { fontSize: 30,borderRadius:20 },
+  photo: { width: "100%", height: "100%" ,borderRadius: 20},
   name: { fontSize: type.body, color: colors.text, fontWeight: "900", marginTop: 6, lineHeight: 13, textAlign: "center" },
   productGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-start", columnGap: 8, rowGap: 8 },
   errorText: { color: colors.danger, fontSize: type.body, fontWeight: "800", textAlign: "center" }

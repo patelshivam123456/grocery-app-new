@@ -52,8 +52,8 @@ function ReviewRow({ review }) {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#F5F6FB" },
   header: { minHeight: 52, flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12, backgroundColor: colors.background, borderBottomWidth: 1, borderBottomColor: colors.faint },
-  back: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.faint, alignItems: "center", justifyContent: "center" },
-  backText: { color: colors.text, fontSize: 26, lineHeight: 28 },
+  back: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.faint, alignItems: "center", justifyContent: "center" },
+  backText: { color: colors.text, fontSize: 20, lineHeight: 22 },
   title: { color: colors.text, fontWeight: "900", fontSize: type.heading },
   sub: { color: colors.muted, fontSize: type.body },
   content: { padding: 12, gap: 10, paddingBottom: 30 },
