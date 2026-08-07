@@ -1,8 +1,9 @@
 import React from "react";
 import { Feather, Ionicons } from "@expo/vector-icons";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useSelector } from "react-redux";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useDispatch, useSelector } from "react-redux";
+import { addWalletMoney } from "../../store/slices/userSlice";
 import { colors } from "../../theme/colors";
 import { type } from "../../theme/typography";
 
@@ -11,10 +12,21 @@ const quickAmounts = [250, 500, 1000, 2000];
 export default function WalletScreen({ navigation }) {
   const wallet = useSelector((state) => state.user.wallet);
   const [amount, setAmount] = React.useState("500");
+  const dispatch = useDispatch();
+  const insets = useSafeAreaInsets();
+  const addMoney = () => {
+    const value = Number(amount);
+    if (!Number.isFinite(value) || value <= 0) {
+      Alert.alert("Enter amount", "Please enter a valid amount to add.");
+      return;
+    }
+    dispatch(addWalletMoney(value));
+    Alert.alert("Money added", `₹${value} added to Fresh Money.`);
+  };
 
   return (
     <SafeAreaView edges={["top", "left", "right"]} style={styles.safe}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingBottom: 28 + insets.bottom }]}>
         <View style={styles.header}>
           <Pressable onPress={() => (navigation?.canGoBack?.() ? navigation.goBack() : navigation?.navigate?.("Tabs", { screen: "Home" }))} style={styles.iconCircle}>
             <Feather name="arrow-left" size={22} color={colors.text} />
@@ -62,7 +74,7 @@ export default function WalletScreen({ navigation }) {
               </Pressable>
             ))}
           </View>
-          <Pressable style={styles.addButton}>
+          <Pressable onPress={addMoney} style={styles.addButton}>
             <Ionicons name="wallet-outline" size={19} color="#fff" />
             <Text style={styles.addButtonText}>Add ₹{Number(amount) || 0}</Text>
           </Pressable>
@@ -110,7 +122,7 @@ function WalletPerk({ icon, title, text }) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#F5F6FB" },
-  content: { padding: 12, gap: 12, paddingBottom: 28 },
+  content: { padding: 12, gap: 12 },
   header: { minHeight: 44, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   iconCircle: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.faint, alignItems: "center", justifyContent: "center" },
   headerTitle: { color: colors.text, fontSize: 20, fontWeight: "900" },

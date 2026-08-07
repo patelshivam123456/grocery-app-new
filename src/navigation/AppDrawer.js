@@ -8,6 +8,7 @@ import BottomTabs from "./BottomTabs";
 import BrandName from "../components/BrandName";
 import AddressListScreen from "../screens/location/AddressListScreen";
 import SettingsScreen from "../screens/settings/SettingsScreen";
+import SettingsInfoScreen from "../screens/settings/SettingsInfoScreen";
 import SupportScreen from "../screens/support/SupportScreen";
 import OffersScreen from "../screens/misc/OffersScreen";
 import WalletScreen from "../screens/misc/WalletScreen";
@@ -82,6 +83,7 @@ export default function AppDrawer() {
       <Drawer.Screen name="Offers" component={OffersScreen} />
       <Drawer.Screen name="Support" component={SupportScreen} />
       <Drawer.Screen name="Settings" component={SettingsScreen} />
+      <Drawer.Screen name="SettingsInfo" component={SettingsInfoScreen} />
     </Drawer.Navigator>
   );
 }

@@ -1,10 +1,11 @@
 import React from "react";
 import { Feather, Ionicons } from "@expo/vector-icons";
-import { Image, Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import { Alert, Image, Modal, Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import LoginOtpSheet from "../../components/LoginOtpSheet";
 import Screen from "../../components/Screen";
 import { logout } from "../../store/slices/authSlice";
+import { updateProfile } from "../../store/slices/userSlice";
 import { colors } from "../../theme/colors";
 import { type } from "../../theme/typography";
 
@@ -28,12 +29,23 @@ export default function ProfileScreen({ navigation }) {
   const mobile = useSelector((state) => state.auth.mobile);
   const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
   const [loginOpen, setLoginOpen] = React.useState(false);
+  const [birthdayOpen, setBirthdayOpen] = React.useState(false);
+  const [birthday, setBirthday] = React.useState(user.birthday || "");
   const dispatch = useDispatch();
   const goBack = () => (navigation.canGoBack() ? navigation.goBack() : navigation.getParent()?.navigate("Home", { screen: "HomeFeed" }));
   const open = (route) => {
     if (route === "Orders") navigation.getParent()?.navigate("Orders", { screen: "OrdersHome" });
     else if (route === "Wishlist") navigation.getParent()?.getParent()?.navigate("Wishlist");
     else navigation.navigate(route);
+  };
+  const saveBirthday = () => {
+    if (!birthday.trim()) {
+      Alert.alert("Enter birthday", "Please enter your birthday.");
+      return;
+    }
+    dispatch(updateProfile({ birthday: birthday.trim() }));
+    setBirthdayOpen(false);
+    Alert.alert("Birthday saved", "Your birthday details have been updated.");
   };
   return (
     <Screen style={styles.screen} contentStyle={{ paddingBottom: 28 }}>
@@ -46,13 +58,13 @@ export default function ProfileScreen({ navigation }) {
         <Text style={styles.phone}>{isLoggedIn && mobile ? `+91 ${mobile}` : "Login to see your mobile number"}</Text>
       </View>
 
-      <View style={styles.birthday}>
+      <Pressable onPress={() => setBirthdayOpen(true)} style={styles.birthday}>
         <View>
           <Text style={styles.birthdayTitle}>Add your birthday</Text>
-          <Text style={styles.enter}>Enter details ›</Text>
+          <Text style={styles.enter}>{user.birthday ? user.birthday : "Enter details ›"}</Text>
         </View>
         <Text style={styles.cake}>🎂</Text>
-      </View>
+      </Pressable>
 
       <View style={styles.quickGrid}>
         {quickActions.map(([label, icon, route]) => (
@@ -99,6 +111,22 @@ export default function ProfileScreen({ navigation }) {
         <Text style={[styles.logoutText, !isLoggedIn && styles.loginText]}>{isLoggedIn ? "Logout" : "Login"}</Text>
       </Pressable>
       <LoginOtpSheet visible={loginOpen} onClose={() => setLoginOpen(false)} />
+      <Modal visible={birthdayOpen} transparent animationType="slide" onRequestClose={() => setBirthdayOpen(false)}>
+        <Pressable style={styles.modalOverlay} onPress={() => setBirthdayOpen(false)}>
+          <Pressable style={styles.modalCard} onPress={() => {}}>
+            <Text style={styles.modalTitle}>Add your birthday</Text>
+            <TextInput value={birthday} onChangeText={setBirthday} placeholder="DD/MM/YYYY" placeholderTextColor={colors.muted} keyboardType="numbers-and-punctuation" style={styles.modalInput} />
+            <View style={styles.modalActions}>
+              <Pressable onPress={() => setBirthdayOpen(false)} style={styles.cancelButton}>
+                <Text style={styles.cancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable onPress={saveBirthday} style={styles.saveButton}>
+                <Text style={styles.saveText}>Save</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </Screen>
   );
 }
@@ -145,5 +173,14 @@ const styles = StyleSheet.create({
   logout: { minHeight: 44, borderRadius: 8, borderWidth: 1, borderColor: colors.danger, alignItems: "center", justifyContent: "center", backgroundColor: colors.surface },
   logoutText: { color: colors.danger, fontWeight: "900", fontSize: type.subheading },
   loginButton: { borderColor: colors.primary, backgroundColor: colors.primary },
-  loginText: { color: "#fff" }
+  loginText: { color: "#fff" },
+  modalOverlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.35)" },
+  modalCard: { backgroundColor: colors.surface, borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 14, gap: 12 },
+  modalTitle: { color: colors.text, fontSize: type.heading, fontWeight: "900" },
+  modalInput: { minHeight: 46, borderRadius: 8, borderWidth: 1, borderColor: colors.faint, paddingHorizontal: 12, color: colors.text, fontSize: type.subheading },
+  modalActions: { flexDirection: "row", gap: 10 },
+  cancelButton: { flex: 1, minHeight: 44, borderRadius: 8, borderWidth: 1, borderColor: colors.faint, alignItems: "center", justifyContent: "center" },
+  saveButton: { flex: 1, minHeight: 44, borderRadius: 8, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" },
+  cancelText: { color: colors.text, fontSize: type.subheading, fontWeight: "900" },
+  saveText: { color: "#fff", fontSize: type.subheading, fontWeight: "900" }
 });

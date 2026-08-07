@@ -1,12 +1,13 @@
 import React from "react";
-import { Modal, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 import AppButton from "../../components/AppButton";
 import LoginOtpSheet from "../../components/LoginOtpSheet";
 import SafeRemoteImage from "../../components/SafeRemoteImage";
+import { coupons } from "../../data/mockData";
 import { completeCheckoutPayment } from "../../services/checkout.service";
-import { addToCart, clearCart, decrementCart, setDeliveryInstruction, setPaymentMethod } from "../../store/slices/cartSlice";
+import { addToCart, applyCoupon, clearCart, decrementCart, setPaymentMethod } from "../../store/slices/cartSlice";
 import { placeOrder } from "../../store/slices/orderSlice";
 import { showToast } from "../../store/slices/appSlice";
 import { FREE_DELIVERY_MIN, selectCartLines, selectCartTotals, selectSelectedAddress } from "../../store/selectors";
@@ -21,6 +22,7 @@ export default function CheckoutScreen({ navigation }) {
   const address = useSelector(selectSelectedAddress);
   const instruction = useSelector((state) => state.cart.deliveryInstruction);
   const paymentMethod = useSelector((state) => state.cart.paymentMethod);
+  const activeCoupon = useSelector((state) => state.cart.coupon);
   const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
   const mobile = useSelector((state) => state.auth.mobile);
   const [loginOpen, setLoginOpen] = React.useState(false);
@@ -56,17 +58,24 @@ export default function CheckoutScreen({ navigation }) {
     dispatch(setPaymentMethod(method));
     setPaymentOpen(false);
   };
+  const chooseCoupon = (coupon) => {
+    if (activeCoupon?.id === coupon.id) {
+      dispatch(applyCoupon(null));
+      return;
+    }
+    if (totals.subtotal < coupon.min) {
+      Alert.alert("Coupon not available", `Add items worth ₹${coupon.min - totals.subtotal} more to use ${coupon.title}.`);
+      return;
+    }
+    dispatch(applyCoupon(coupon));
+    Alert.alert("Coupon applied", `${coupon.title} discount added.`);
+  };
 
   return (
     <SafeAreaView edges={["top", "left", "right"]} style={styles.root}>
       <View style={styles.header}>
         <Pressable onPress={goBack} style={styles.iconCircle}><Text style={styles.backText}>‹</Text></Pressable>
         <Text style={styles.headerTitle}>Checkout</Text>
-        <Pressable style={styles.iconCircle}><Text style={styles.headerIcon}>⌕</Text></Pressable>
-        <Pressable onPress={() => Share.share({ message: `Just Harvst cart total ₹${totals.total}` })} style={styles.shareBtn}>
-          <Text style={styles.shareIcon}>↗</Text>
-          <Text numberOfLines={1} style={styles.shareText}>Share</Text>
-        </Pressable>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
@@ -81,16 +90,6 @@ export default function CheckoutScreen({ navigation }) {
           </Pressable>
         </Section>
 
-        <Section title="Delivery instructions">
-          <TextInput
-            value={instruction}
-            onChangeText={(text) => dispatch(setDeliveryInstruction(text))}
-            placeholder="Leave at door, call on arrival..."
-            placeholderTextColor={colors.muted}
-            style={styles.input}
-          />
-        </Section>
-
         <Section title={`Cart items • ${totals.count}`}>
           <View style={styles.deliveryRow}>
             <Text style={styles.clock}>◷</Text>
@@ -100,7 +99,7 @@ export default function CheckoutScreen({ navigation }) {
             </View>
           </View>
           {lines.map(({ cartKey, product, productId, unit, qty, lineTotal }, index) => (
-            <View key={cartKey} style={[styles.itemRow, index > 0 && styles.itemBorder]}>
+            <Pressable key={cartKey} onPress={() => navigation.navigate("ProductDetails", { productId })} style={[styles.itemRow, index > 0 && styles.itemBorder]}>
               <View style={styles.itemImage}>
                 <SafeRemoteImage uri={product.imageGallery?.[0]} style={styles.itemPhoto} fallback={product.image} fallbackStyle={styles.itemEmoji} />
               </View>
@@ -117,7 +116,7 @@ export default function CheckoutScreen({ navigation }) {
                 </View>
                 <Text style={styles.price}>₹{lineTotal}</Text>
               </View>
-            </View>
+            </Pressable>
           ))}
         </Section>
 
@@ -132,9 +131,17 @@ export default function CheckoutScreen({ navigation }) {
 
         <Section title="Coupon section">
           <View style={styles.couponRow}>
-            <Coupon code="SAVE50" detail="₹50 off above ₹299" />
-            <Coupon code="FRESH20" detail="₹20 off above ₹149" />
+            {coupons.map((coupon) => (
+              <Coupon
+                key={coupon.id}
+                code={coupon.title}
+                detail={`₹${coupon.discount} off above ₹${coupon.min}`}
+                active={activeCoupon?.id === coupon.id}
+                onPress={() => chooseCoupon(coupon)}
+              />
+            ))}
           </View>
+          {activeCoupon ? <Text style={styles.appliedCoupon}>{activeCoupon.title} applied. Tap again to remove.</Text> : null}
         </Section>
 
         <Section title="Bill summary">
@@ -202,11 +209,12 @@ function Section({ title, children }) {
   );
 }
 
-function Coupon({ code, detail }) {
+function Coupon({ code, detail, active, onPress }) {
   return (
-    <Pressable style={styles.coupon}>
+    <Pressable onPress={onPress} style={[styles.coupon, active && styles.couponActive]}>
       <Text style={styles.couponCode}>{code}</Text>
       <Text style={styles.body}>{detail}</Text>
+      <Text style={[styles.couponAction, active && styles.couponActionActive]}>{active ? "Applied" : "Apply"}</Text>
     </Pressable>
   );
 }
@@ -225,11 +233,7 @@ const styles = StyleSheet.create({
   header: { height: 52, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, backgroundColor: colors.background, borderBottomWidth: 1, borderBottomColor: colors.faint },
   iconCircle: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.faint },
   backText: { fontSize: 26, lineHeight: 28, color: colors.text },
-  headerIcon: { fontSize: type.heading, color: colors.text, fontWeight: "900" },
   headerTitle: { flex: 1, minWidth: 0, fontSize: type.heading, fontWeight: "900", color: colors.text },
-  shareBtn: { height: 34, maxWidth: 88, borderRadius: 17, backgroundColor: colors.surface, paddingHorizontal: 10, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.faint, flexDirection: "row", gap: 5 },
-  shareIcon: { color: colors.text, fontWeight: "900", fontSize: type.body },
-  shareText: { color: colors.text, fontWeight: "900", fontSize: type.subheading },
   content: { padding: 12, gap: 10, paddingBottom: 92 },
   card: { backgroundColor: colors.surface, borderRadius: 8, padding: 12, gap: 9, borderWidth: 1, borderColor: colors.faint },
   sectionTitle: { fontSize: type.heading, fontWeight: "900", color: colors.text },
@@ -260,7 +264,11 @@ const styles = StyleSheet.create({
   progressFill: { height: 4, backgroundColor: "#2B7DE9" },
   couponRow: { flexDirection: "row", gap: 8 },
   coupon: { flex: 1, backgroundColor: "#FFF7DF", borderRadius: 8, padding: 10, borderWidth: 1, borderColor: "#F9D77E" },
+  couponActive: { backgroundColor: "#ECFFF1", borderColor: colors.primary },
   couponCode: { fontWeight: "900", color: colors.orange, fontSize: type.heading },
+  couponAction: { marginTop: 8, color: colors.primary, fontWeight: "900", fontSize: type.body },
+  couponActionActive: { color: colors.primaryDark },
+  appliedCoupon: { color: colors.primaryDark, fontSize: type.body, fontWeight: "900" },
   billRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   billLabel: { color: colors.muted, fontSize: type.subheading },
   billValue: { color: colors.text, fontWeight: "800", fontSize: type.subheading },

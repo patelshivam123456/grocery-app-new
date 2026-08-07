@@ -267,7 +267,7 @@ function ProductDetailsSheet({ visible, product, unit, image, wished, onClose, o
       <View style={styles.detailsOverlay}>
         <Pressable style={styles.detailsDim} onPress={onClose} />
         <Pressable onPress={onClose} style={styles.detailsClose}><Feather name="x" size={30} color="#fff" /></Pressable>
-        <View style={[styles.detailsSheet, { paddingBottom: 88 + insets.bottom }]}>
+        <View style={styles.detailsSheet}>
           <View style={styles.detailsHeader}>
             <View style={styles.sheetThumb}>
               <SafeRemoteImage uri={image} style={styles.sheetThumbPhoto} fallback={image} fallbackStyle={styles.sheetThumbEmoji} />
@@ -278,7 +278,7 @@ function ProductDetailsSheet({ visible, product, unit, image, wished, onClose, o
             </Pressable>
             <Pressable onPress={onShare} style={styles.sheetIcon}><Feather name="share-2" size={20} color={colors.text} /></Pressable>
           </View>
-          <ScrollView contentContainerStyle={styles.sheetBody} showsVerticalScrollIndicator={false}>
+          <ScrollView contentContainerStyle={[styles.sheetBody, { paddingBottom: 162 + insets.bottom }]} showsVerticalScrollIndicator={false}>
             <Text style={styles.allDetailsTitle}>All details</Text>
             <View style={styles.packImageWrap}>
               <SafeRemoteImage uri={image} style={styles.packImage} resizeMode="contain" fallback={image} fallbackStyle={styles.packEmoji} />
@@ -298,7 +298,7 @@ function ProductDetailsSheet({ visible, product, unit, image, wished, onClose, o
               {infoRows.map(([label, value]) => <SheetRow key={label} label={label} value={value} />)}
             </View>
           </ScrollView>
-          <View style={[styles.purchaseBar, styles.sheetPurchaseBar]}>
+          <View style={[styles.purchaseBar, styles.sheetPurchaseBar, { paddingBottom: Math.max(insets.bottom, 10) }]}>
             <View style={styles.purchaseCopy}>
               <Text style={styles.purchaseWeight}>{unit.label}</Text>
               <View style={styles.purchasePriceRow}>
@@ -319,7 +319,7 @@ function ProductDetailsSheet({ visible, product, unit, image, wished, onClose, o
               </Pressable>
             )}
           </View>
-          <FloatingCartPill navigation={navigation} bottomOffset={86 + insets.bottom} />
+          <FloatingCartPill navigation={navigation} bottomOffset={96 + insets.bottom} />
         </View>
       </View>
     </Modal>

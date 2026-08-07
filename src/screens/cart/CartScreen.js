@@ -1,5 +1,5 @@
 import React from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 import Screen from "../../components/Screen";
@@ -7,8 +7,7 @@ import AppButton from "../../components/AppButton";
 import EmptyState from "../../components/EmptyState";
 import LoginOtpSheet from "../../components/LoginOtpSheet";
 import SafeRemoteImage from "../../components/SafeRemoteImage";
-import { addToCart, applyCoupon, decrementCart, removeFromCart } from "../../store/slices/cartSlice";
-import { coupons } from "../../data/mockData";
+import { addToCart, decrementCart, removeFromCart } from "../../store/slices/cartSlice";
 import { selectCartLines, selectCartTotals, selectSelectedAddress } from "../../store/selectors";
 import { colors } from "../../theme/colors";
 import { type } from "../../theme/typography";
@@ -43,32 +42,24 @@ export default function CartScreen({ navigation }) {
     <View style={styles.root}>
       <Screen contentStyle={{ paddingBottom: 98 }}>
       {lines.map(({ cartKey, product, productId, unit, qty, lineTotal }) => (
-        <View key={cartKey} style={styles.line}>
-          <View style={styles.iconWrap}>
-            <SafeRemoteImage uri={product.imageGallery?.[0]} style={styles.photo} fallback={product.image} fallbackStyle={styles.icon} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.name}>{product.name}</Text>
-            <Text style={styles.sub}>{product.quantity} • ₹{lineTotal}</Text>
-            <Pressable onPress={() => dispatch(removeFromCart(cartKey))}><Text style={styles.remove}>Remove</Text></Pressable>
+        <Pressable key={cartKey} onPress={() => navigation.navigate("ProductDetails", { productId })} style={styles.line}>
+          <View style={styles.itemInfo}>
+            <View style={styles.iconWrap}>
+              <SafeRemoteImage uri={product.imageGallery?.[0]} style={styles.photo} fallback={product.image} fallbackStyle={styles.icon} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.name}>{product.name}</Text>
+              <Text style={styles.sub}>{product.quantity} • ₹{lineTotal}</Text>
+              <Pressable onPress={() => dispatch(removeFromCart(cartKey))}><Text style={styles.remove}>Remove</Text></Pressable>
+            </View>
           </View>
           <View style={styles.stepper}>
             <Pressable onPress={() => dispatch(decrementCart(cartKey))}><Text style={styles.step}>-</Text></Pressable>
             <Text style={styles.qty}>{qty}</Text>
             <Pressable onPress={() => dispatch(addToCart(unit ? { productId, unit } : productId))}><Text style={styles.step}>+</Text></Pressable>
           </View>
-        </View>
+        </Pressable>
       ))}
-      <Text style={styles.heading}>Apply coupon</Text>
-      <View style={styles.coupons}>
-        {coupons.map((coupon) => (
-          <Pressable key={coupon.id} onPress={() => dispatch(applyCoupon(coupon))} style={styles.coupon}>
-            <Text style={styles.couponTitle}>{coupon.title}</Text>
-            <Text style={styles.sub}>₹{coupon.discount} off above ₹{coupon.min}</Text>
-          </Pressable>
-        ))}
-      </View>
-      <TextInput placeholder="Delivery instructions for rider" style={styles.input} />
       <View style={styles.bill}>
         <Text style={styles.heading}>Bill summary</Text>
         <Row label="Item total" value={`₹${totals.subtotal}`} />
@@ -102,6 +93,7 @@ function Row({ label, value, strong }) {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   line: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: colors.surface, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: colors.faint },
+  itemInfo: { flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", gap: 10 },
   iconWrap: { width: 38, height: 38, alignItems: "center", justifyContent: "center" },
   icon: { fontSize: 30 },
   photo: { width: "100%", height: "100%", borderRadius: 8 },
@@ -112,10 +104,6 @@ const styles = StyleSheet.create({
   step: { color: "#fff", fontWeight: "900", fontSize: type.heading },
   qty: { color: "#fff", fontWeight: "900", fontSize: type.subheading },
   heading: { fontSize: type.heading, fontWeight: "900", color: colors.text },
-  coupons: { flexDirection: "row", gap: 10 },
-  coupon: { flex: 1, backgroundColor: "#FFF7DF", borderRadius: 8, padding: 10, borderWidth: 1, borderColor: "#F9D77E" },
-  couponTitle: { fontWeight: "900", color: colors.orange, fontSize: type.heading },
-  input: { height: 44, backgroundColor: colors.surface, borderRadius: 8, borderWidth: 1, borderColor: colors.faint, paddingHorizontal: 10, fontSize: type.body },
   bill: { backgroundColor: colors.surface, borderRadius: 8, padding: 12, gap: 8 },
   row: { flexDirection: "row", justifyContent: "space-between" },
   strong: { color: colors.text, fontWeight: "900", fontSize: type.subheading },

@@ -1,6 +1,7 @@
 import React from "react";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { Modal, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 import { addToCart, decrementCart } from "../store/slices/cartSlice";
 import { toggleWishlist } from "../store/slices/wishlistSlice";
@@ -11,6 +12,7 @@ import { type } from "../theme/typography";
 
 export default function ProductQuickViewSheet({ product, visible, onClose, onOpenFull }) {
   const dispatch = useDispatch();
+  const insets = useSafeAreaInsets();
   const [variantIndex, setVariantIndex] = React.useState(0);
   const variants = product?.variants || product?.productVariantList || [];
   const activeVariant = variants[variantIndex] || product?.selectedVariant;
@@ -47,7 +49,7 @@ export default function ProductQuickViewSheet({ product, visible, onClose, onOpe
               <Feather name="share-2" size={19} color={colors.text} />
             </Pressable>
           </View>
-          <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+          <ScrollView contentContainerStyle={[styles.body, { paddingBottom: 88 + insets.bottom }]} showsVerticalScrollIndicator={false}>
             <View style={styles.priceRow}>
               <Text style={styles.price}>₹{displayProduct.price}</Text>
               <Text style={styles.mrp}>MRP ₹{displayProduct.mrp}</Text>
@@ -73,7 +75,7 @@ export default function ProductQuickViewSheet({ product, visible, onClose, onOpe
             </View>
             {product.features?.map((item) => <Text key={item} style={styles.feature}>• {item}</Text>)}
           </ScrollView>
-          <View style={styles.footer}>
+          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
             <View>
               <Text style={styles.sub}>{displayProduct.quantity}</Text>
               <Text style={styles.price}>₹{displayProduct.price}</Text>
@@ -138,7 +140,7 @@ const styles = StyleSheet.create({
   variantChipActive: { backgroundColor: "#EAFBEF", borderColor: colors.primary },
   variantText: { color: colors.text, fontSize: type.body, fontWeight: "900" },
   variantTextActive: { color: colors.primaryDark },
-  footer: { flexDirection: "row", alignItems: "center", gap: 8, padding: 12, borderTopWidth: 1, borderTopColor: colors.faint },
+  footer: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.faint },
   addButton: { flex: 1, height: 44, borderRadius: 10, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" },
   addText: { color: "#fff", fontSize: type.subheading, fontWeight: "900" },
   stepper: { flex: 1, height: 44, borderRadius: 10, backgroundColor: colors.primary, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 18 },

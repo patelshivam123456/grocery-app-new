@@ -30,7 +30,8 @@ export const selectCartTotals = (state) => {
   const subtotal = lines.reduce((sum, line) => sum + line.lineTotal, 0);
   const delivery = subtotal >= FREE_DELIVERY_MIN || subtotal === 0 ? 0 : 25;
   const platform = subtotal ? 7 : 0;
-  const discount = state.cart.coupon ? state.cart.coupon.discount : 0;
+  const coupon = state.cart.coupon;
+  const discount = coupon && subtotal >= coupon.min ? coupon.discount : 0;
   return {
     subtotal,
     delivery,
