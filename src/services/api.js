@@ -66,7 +66,7 @@ async function refreshAccessToken() {
       const refreshToken = getAuthState().refreshToken || await getPersistedRefreshToken();
       if (!refreshToken) throw sessionError("Your session has expired. Please login again.");
 
-      const response = await publicApi.post("/e-comm-authorization/auth/v1/refresh-token-app", { refreshToken });
+      const response = await publicApi.post("/authorization/auth/v1/refresh-token-app", { refreshToken });
       const payload = getAuthPayload(response);
       const accessToken = getAccessToken(payload);
       const nextRefreshToken = getRefreshToken(payload);
