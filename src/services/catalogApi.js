@@ -4,8 +4,8 @@ const PLACEHOLDER_IMAGE = "▣";
 const API_URL = process.env.EXPO_PUBLIC_API_URL || "";
 
 export const endpoints = {
-  categories: "/e-comm-admin/category/v1/get-all",
-  products: "/e-comm-admin/product/v1/get-all?filter=all",
+  categories: "/admin/category/v1/get-all",
+  products: "/admin/product/v1/get-all?filter=all",
   productsByCategory: (categoryPublicId) =>
     `/e-comm-admin/product/v1/get-all?filter=all&categoryPublicId=${encodeURIComponent(categoryPublicId)}`
 };
