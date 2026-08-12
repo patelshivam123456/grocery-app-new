@@ -1,32 +1,21 @@
-import { orderService } from "./order.service";
+import { NativeModules } from "react-native";
 import { paymentService } from "./payment.service";
 
-function buildOrderPayload({ lines, total, address, instruction, paymentMethod, userMobile }) {
+const RAZORPAY_KEY_ID = "rzp_test_TJDWj6pZSsjJGI";
+
+function createPaymentOrder(amount) {
+  const orderNumber = Date.now().toString().slice(-6);
+  const orderPublicId = `FD${orderNumber}`;
   return {
-    amount: total,
-    totalAmount: total,
-    receipt: `rcpt_${Date.now()}`,
-    customerMobile: userMobile,
-    paymentMethod,
-    deliveryInstruction: instruction,
-    address,
-    items: lines.map((line) => ({
-      productPublicId: line.productId,
-      productName: line.product.name,
-      quantity: line.qty,
-      amount: line.lineTotal,
-      variantPublicId: line.unit?.id || line.unit?.productVariantPublicId
-    }))
+    orderPublicId,
+    orderNumber,
+    amount,
+    receipt: `receipt-${orderPublicId}`
   };
 }
 
-function normalizeOrderResponse(response, fallbackAmount) {
-  const payload = response?.data || response || {};
-  return {
-    orderPublicId: payload.orderPublicId || payload.order?.orderPublicId || payload.id,
-    amount: Number(payload.amount || payload.totalAmount || fallbackAmount),
-    receipt: payload.receipt || payload.order?.receipt || `rcpt_${Date.now()}`
-  };
+function getPaymentOrderNumber(order) {
+  return order.orderNumber || order.orderPublicId;
 }
 
 function normalizeInitiateResponse(response) {
@@ -34,17 +23,52 @@ function normalizeInitiateResponse(response) {
   return {
     razorpayKeyId: payload.razorpayKeyId || payload.keyId || payload.key,
     razorpayOrderId: payload.razorpayOrderId || payload.orderId,
+    paymentPublicId: payload.paymentPublicId,
+    razorpayOrderStatus: payload.razorpayOrderStatus,
+    orderNumber: payload.orderNumber,
     currency: payload.currency || "INR",
-    status: payload.status || "created",
+    status: payload.paymentStatus || payload.razorpayOrderStatus || payload.status || "created",
     amount: Number(payload.amount || 0),
-    amountInPaise: Number(payload.amountInPaise || payload.amount_in_paise || 0)
+    amountInPaise: Number(payload.amountInPaise || payload.amount_in_paise || payload.amountDue || payload.amount || 0)
   };
+}
+
+async function openRazorpayCheckout({ initiated, order, input, amountInPaise }) {
+  if (!initiated.razorpayOrderId) {
+    throw new Error("Unable to start payment. Razorpay order id was not returned.");
+  }
+  if (!NativeModules.RNRazorpayCheckout) {
+    throw new Error("Razorpay is not available in this build. Please run a native Expo development build.");
+  }
+
+  const RazorpayCheckout = require("react-native-razorpay").default;
+  return RazorpayCheckout.open({
+    key: initiated.razorpayKeyId || RAZORPAY_KEY_ID,
+    order_id: initiated.razorpayOrderId,
+    amount: String(amountInPaise),
+    currency: initiated.currency || "INR",
+    name: "Just Harvst",
+    description: `Order ${order.orderPublicId}`,
+    prefill: {
+      contact: input.userMobile || "",
+      email: "",
+      name: ""
+    },
+    notes: {
+      orderPublicId: order.orderPublicId,
+      receipt: order.receipt
+    },
+    theme: {
+      color: "#2E7D32"
+    }
+  });
 }
 
 export async function completeCheckoutPayment(input) {
   if (input.paymentMethod === "COD") {
     const order = {
       orderPublicId: `local-${Date.now()}`,
+      orderNumber: null,
       amount: input.total,
       receipt: `cod_${Date.now()}`
     };
@@ -64,61 +88,44 @@ export async function completeCheckoutPayment(input) {
     };
   }
 
-  const orderPayload = buildOrderPayload(input);
-  let order;
-  try {
-    const orderResponse = await orderService.create(orderPayload);
-    order = normalizeOrderResponse(orderResponse, input.total);
-  } catch (error) {
-    order = {
-      orderPublicId: `local-${Date.now()}`,
-      amount: input.total,
-      receipt: orderPayload.receipt
-    };
-  }
-  if (!order.orderPublicId) {
-    order = {
-      orderPublicId: `local-${Date.now()}`,
-      amount: input.total,
-      receipt: orderPayload.receipt
-    };
-  }
+  const order = createPaymentOrder(input.total);
 
   let initiated;
   try {
+    const orderNumber = getPaymentOrderNumber(order);
     const initiatedResponse = await paymentService.initiate({
       orderPublicId: order.orderPublicId,
       receipt: order.receipt,
-      amount: order.amount
+      amount: order.amount,
+      orderNumber
     });
     initiated = normalizeInitiateResponse(initiatedResponse);
   } catch (error) {
-    initiated = { currency: "INR", status: "created", amount: order.amount, amountInPaise: order.amount * 100 };
+    throw error;
   }
 
   const amount = initiated.amount || order.amount;
   const amountInPaise = initiated.amountInPaise || amount * 100;
+  const razorpayResult = await openRazorpayCheckout({ initiated, order, input, amountInPaise });
   const acknowledgePayload = {
-    razorpayKeyId: initiated.razorpayKeyId,
+    paymentPublicId: initiated.paymentPublicId,
+    razorpayKeyId: initiated.razorpayKeyId || RAZORPAY_KEY_ID,
     razorpayOrderId: initiated.razorpayOrderId,
+    razorpayOrderStatus: initiated.razorpayOrderStatus,
     orderPublicId: order.orderPublicId,
+    orderNumber: initiated.orderNumber || order.orderNumber,
     receipt: order.receipt,
     currency: initiated.currency || "INR",
-    status: initiated.status || "created",
-    razorpayPaymentId: null,
-    razorpaySignature: null,
-    paymentStatus: null,
-    signatureVerified: false,
+    status: "paid",
+    razorpayPaymentId: razorpayResult.razorpay_payment_id,
+    razorpaySignature: razorpayResult.razorpay_signature,
+    paymentStatus: "SUCCESS",
+    signatureVerified: true,
     acknowledgedAt: new Date().toISOString(),
     amount,
     amountInPaise
   };
 
-  let acknowledged = null;
-  try {
-    acknowledged = await paymentService.acknowledge(acknowledgePayload);
-  } catch (error) {
-    acknowledged = { skipped: true };
-  }
+  const acknowledged = await paymentService.acknowledge(acknowledgePayload);
   return { order, payment: initiated, acknowledgement: acknowledged, acknowledgePayload };
 }
