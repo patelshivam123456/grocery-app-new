@@ -3,13 +3,17 @@ import { paymentService } from "./payment.service";
 
 const RAZORPAY_KEY_ID = "rzp_test_TJDWj6pZSsjJGI";
 
+function toPaise(amount) {
+  return Math.round(Number(amount || 0) * 100);
+}
+
 function createPaymentOrder(amount) {
   const orderNumber = Date.now().toString().slice(-6);
   const orderPublicId = `FD${orderNumber}`;
   return {
     orderPublicId,
     orderNumber,
-    amount,
+    amount: toPaise(amount),
     receipt: `receipt-${orderPublicId}`
   };
 }
