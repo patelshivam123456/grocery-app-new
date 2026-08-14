@@ -35,6 +35,7 @@ async function runStartupHydration(dispatch) {
   } catch (error) {
     if (error?.status === 401 || error?.status === 403) {
       dispatch(logout());
+      await dispatch(fetchCatalog());
       dispatch(setBootstrapped(true));
       return;
     }

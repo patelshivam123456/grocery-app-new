@@ -5,9 +5,9 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL || "";
 
 export const endpoints = {
   categories: "/admin/category/v1/get-all",
-  products: "/admin/product/v1/get-all?filter=all",
+  products: "/admin/product/v1/get-all?filter=active",
   productsByCategory: (categoryPublicId) =>
-    `/e-comm-admin/product/v1/get-all?filter=all&categoryPublicId=${encodeURIComponent(categoryPublicId)}`
+    `/e-comm-admin/product/v1/get-all?filter=active&categoryPublicId=${encodeURIComponent(categoryPublicId)}`
 };
 
 export const catalogApi = {

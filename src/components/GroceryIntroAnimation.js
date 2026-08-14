@@ -2,7 +2,7 @@ import React from "react";
 import { StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withTiming } from "react-native-reanimated";
 
-const INTRO_DURATION = 7000;
+const INTRO_DURATION = 8000;
 
 const floatingItems = [
   { label: "🍎", x: 14, y: 15, size: 58, delay: 0, drift: 28 },

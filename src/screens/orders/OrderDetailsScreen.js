@@ -15,10 +15,12 @@ export default function OrderDetailsScreen({ route, navigation }) {
   });
   const dispatch = useDispatch();
   if (!order) return null;
+  const orderNumber = order.paymentResult?.payment?.orderNumber || order.paymentResult?.payment?.orderPublicId || order.paymentResult?.order?.orderNumber || order.paymentResult?.order?.orderPublicId || order.id;
   return (
     <Screen>
       <View style={styles.card}>
         <Text style={styles.title}>Order #{order.id}</Text>
+        <Text style={styles.orderNumber}>Order number: {orderNumber}</Text>
         <Text style={styles.sub}>{order.status} • ₹{order.total} • {order.paymentMethod}</Text>
       </View>
       <View style={styles.card}>
@@ -51,6 +53,7 @@ export default function OrderDetailsScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   card: { backgroundColor: colors.surface, borderRadius: 8, padding: 14, gap: 8 },
   title: { fontSize: type.heading, fontWeight: "900", color: colors.text },
+  orderNumber: { color: colors.primaryDark, fontWeight: "900", fontSize: type.subheading },
   sub: { color: colors.muted, lineHeight: 15, fontSize: type.body },
   step: { color: colors.text, paddingVertical: 5, fontWeight: "700", fontSize: type.body },
   itemRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8 },

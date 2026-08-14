@@ -29,7 +29,7 @@ export default function PaymentScreen({ navigation }) {
       const paymentResult = await completeCheckoutPayment({ lines, total: totals.total, address, instruction, paymentMethod: method, userMobile: mobile });
       dispatch(placeOrder({ lines, total: totals.total, address, instruction, paymentMethod: method, userMobile: mobile, paymentResult }));
       dispatch(clearCart());
-      navigation.replace("OrderSuccess");
+      navigation.replace("OrderSuccess", { orderNumber: paymentResult.payment?.orderNumber || paymentResult.payment?.orderPublicId || paymentResult.order?.orderNumber || paymentResult.order?.orderPublicId });
     } catch (error) {
       dispatch(showToast(error?.friendlyMessage || error?.message || "Unable to place order. Please try again."));
     } finally {

@@ -12,20 +12,16 @@ import { colors } from "../theme/colors";
 const Stack = createNativeStackNavigator();
 
 export default function RootNavigator() {
-  const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
-  const guestMode = useSelector((state) => state.auth.guestMode);
   const onboardingComplete = useSelector((state) => state.auth.onboardingComplete);
-  const canEnterApp = isLoggedIn || guestMode;
 
   return (
     <>
       <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
         {!onboardingComplete ? (
           <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-        ) : canEnterApp ? (
-          <Stack.Screen name="Main" component={AppDrawer} />
         ) : (
           <>
+            <Stack.Screen name="Main" component={AppDrawer} />
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Otp" component={OtpScreen} />
             <Stack.Screen name="Signup" component={SignupScreen} />

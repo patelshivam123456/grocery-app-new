@@ -22,12 +22,31 @@ function getPaymentOrderNumber(order) {
   return order.orderNumber || order.orderPublicId;
 }
 
+function getLineVariantName(line) {
+  return line.unit?.variantName || line.unit?.label || line.product?.selectedVariant?.variantName || line.product?.selectedVariant?.label || line.product?.quantity || "";
+}
+
+function createOrderDto(input, amount) {
+  const productVariantAndItemMap = (input.lines || []).map((line) => ({
+    productVariantPublicId: line.unit?.productVariantPublicId || line.unit?.id || line.product?.selectedVariant?.productVariantPublicId || line.product?.selectedVariant?.id || line.productId,
+    productVariantName: getLineVariantName(line),
+    numberOfItems: String(line.qty)
+  }));
+
+  return {
+    productVariantAndItemMap,
+    totalItems: productVariantAndItemMap.length,
+    totalCost: amount
+  };
+}
+
 function normalizeInitiateResponse(response) {
   const payload = response?.data || response || {};
   return {
     razorpayKeyId: payload.razorpayKeyId || payload.keyId || payload.key,
     razorpayOrderId: payload.razorpayOrderId || payload.orderId,
     paymentPublicId: payload.paymentPublicId,
+    orderPublicId: payload.orderPublicId,
     razorpayOrderStatus: payload.razorpayOrderStatus,
     orderNumber: payload.orderNumber,
     currency: payload.currency || "INR",
@@ -98,10 +117,10 @@ export async function completeCheckoutPayment(input) {
   try {
     const orderNumber = getPaymentOrderNumber(order);
     const initiatedResponse = await paymentService.initiate({
-      orderPublicId: order.orderPublicId,
       receipt: order.receipt,
       amount: order.amount,
-      orderNumber
+      orderNumber,
+      orderDto: createOrderDto(input, order.amount)
     });
     initiated = normalizeInitiateResponse(initiatedResponse);
   } catch (error) {
@@ -109,25 +128,14 @@ export async function completeCheckoutPayment(input) {
   }
 
   const amount = initiated.amount || order.amount;
-  const amountInPaise = initiated.amountInPaise || amount * 100;
+  const amountInPaise = initiated.amountInPaise || amount;
   const razorpayResult = await openRazorpayCheckout({ initiated, order, input, amountInPaise });
   const acknowledgePayload = {
     paymentPublicId: initiated.paymentPublicId,
-    razorpayKeyId: initiated.razorpayKeyId || RAZORPAY_KEY_ID,
+    orderPublicId: initiated.orderPublicId || order.orderPublicId,
     razorpayOrderId: initiated.razorpayOrderId,
-    razorpayOrderStatus: initiated.razorpayOrderStatus,
-    orderPublicId: order.orderPublicId,
-    orderNumber: initiated.orderNumber || order.orderNumber,
-    receipt: order.receipt,
-    currency: initiated.currency || "INR",
-    status: "paid",
     razorpayPaymentId: razorpayResult.razorpay_payment_id,
-    razorpaySignature: razorpayResult.razorpay_signature,
-    paymentStatus: "SUCCESS",
-    signatureVerified: true,
-    acknowledgedAt: new Date().toISOString(),
-    amount,
-    amountInPaise
+    razorpaySignature: razorpayResult.razorpay_signature
   };
 
   const acknowledged = await paymentService.acknowledge(acknowledgePayload);

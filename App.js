@@ -33,29 +33,17 @@ function OrderDeliveryTimer() {
 function Bootstrap() {
   const dispatch = useDispatch();
   const bootstrapped = useSelector((state) => state.app.bootstrapped);
-  const onboardingComplete = useSelector((state) => state.auth.onboardingComplete);
-  const [splashVisible, setSplashVisible] = React.useState(false);
   const [splashComplete, setSplashComplete] = React.useState(false);
-  const previousOnboardingComplete = React.useRef(onboardingComplete);
 
   useEffect(() => {
     dispatch(hydrateApp());
   }, [dispatch]);
 
-  React.useEffect(() => {
-    if (!bootstrapped) return;
-    if (!previousOnboardingComplete.current && onboardingComplete) {
-      setSplashVisible(true);
-      setSplashComplete(false);
-    }
-    previousOnboardingComplete.current = onboardingComplete;
-  }, [bootstrapped, onboardingComplete]);
-
   if (!bootstrapped) {
     return null;
   }
 
-  if (splashVisible && !splashComplete) {
+  if (!splashComplete) {
     return <GroceryIntroAnimation onComplete={() => setSplashComplete(true)} />;
   }
 

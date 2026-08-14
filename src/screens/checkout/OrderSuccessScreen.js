@@ -8,8 +8,9 @@ import CommerceBottomStack from "../../components/CommerceBottomStack";
 import { colors } from "../../theme/colors";
 import { type } from "../../theme/typography";
 
-export default function OrderSuccessScreen({ navigation }) {
+export default function OrderSuccessScreen({ route, navigation }) {
   const insets = useSafeAreaInsets();
+  const orderNumber = route.params?.orderNumber;
   const scale = React.useRef(new Animated.Value(0.5)).current;
   const fade = React.useRef(new Animated.Value(0)).current;
   const slide = React.useRef(new Animated.Value(24)).current;
@@ -38,6 +39,7 @@ export default function OrderSuccessScreen({ navigation }) {
       </Animated.View>
       <Animated.View style={[styles.copy, { opacity: fade, transform: [{ translateY: slide }] }]}>
         <Text style={styles.title}>Order placed</Text>
+        {orderNumber ? <Text style={styles.orderNumber}>Order #{orderNumber}</Text> : null}
         <Text style={styles.sub}>Your groceries are being packed and will move to live tracking shortly.</Text>
       </Animated.View>
 
@@ -71,6 +73,7 @@ const styles = StyleSheet.create({
   successIcon: { width: 96, height: 96, borderRadius: 48, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center", shadowColor: "#073D21", shadowOpacity: 0.22, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 8 },
   copy: { alignItems: "center", marginTop: 18 },
   title: { fontSize: 30, fontWeight: "900", color: colors.text },
+  orderNumber: { color: colors.primaryDark, fontWeight: "900", marginTop: 6, fontSize: type.subheading },
   sub: { color: colors.muted, textAlign: "center", lineHeight: 22, marginTop: 8, fontSize: type.subheading },
   timeline: { width: "100%", borderRadius: 8, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.faint, padding: 12, gap: 10, marginTop: 22 },
   timelineItem: { minHeight: 42, flexDirection: "row", alignItems: "center", gap: 10 },
