@@ -11,7 +11,7 @@ import ProductQuickViewSheet from "../../components/ProductQuickViewSheet";
 import SafeRemoteImage from "../../components/SafeRemoteImage";
 import CommerceBottomStack, { bottomStackHeight } from "../../components/CommerceBottomStack";
 import { banners } from "../../data/mockData";
-import { selectSelectedAddress } from "../../store/selectors";
+import { selectIsLoggedIn, selectSelectedAddress, selectVisibleWalletBalance } from "../../store/selectors";
 import { fetchCatalog } from "../../store/slices/productSlice";
 import { colors } from "../../theme/colors";
 import { type } from "../../theme/typography";
@@ -28,6 +28,8 @@ export default function HomeScreen({ navigation }) {
   const error = useSelector((state) => state.products.error);
   const recentIds = useSelector((state) => state.products.recentlyViewed);
   const address = useSelector(selectSelectedAddress);
+  const isLoggedIn = useSelector(selectIsLoggedIn);
+  const walletBalance = useSelector(selectVisibleWalletBalance);
   const recent = React.useMemo(() => recentIds.map((id) => products.find((item) => item.id === id)).filter(Boolean), [products, recentIds]);
   const goProduct = React.useCallback((id) => navigation.navigate("ProductDetails", { productId: id }), [navigation]);
   const activeCategory = React.useMemo(() => categories.find((cat) => cat.id === activeTab), [activeTab, categories]);
@@ -87,10 +89,12 @@ export default function HomeScreen({ navigation }) {
               {address ? `${address.label.toUpperCase()} - ${address.line1}` : "OTHER - add your delivery location"} ▾
             </Text>
           </Pressable>
-          <Pressable onPress={() => navigation.getParent()?.getParent()?.navigate("Wallet")} style={styles.headerCircle}>
-            <Ionicons name="wallet-outline" size={20} color="#9A6A08" />
-            <Text style={styles.walletAmount}>₹0</Text>
-          </Pressable>
+          {isLoggedIn ? (
+            <Pressable onPress={() => navigation.getParent()?.getParent()?.navigate("Wallet")} style={styles.headerCircle}>
+              <Ionicons name="wallet-outline" size={20} color="#9A6A08" />
+              <Text numberOfLines={1} adjustsFontSizeToFit style={styles.walletAmount}>₹{walletBalance}</Text>
+            </Pressable>
+          ) : null}
           <Pressable onPress={() => navigation.getParent()?.navigate("Profile", { screen: "ProfileHome" })} style={styles.headerCircle}>
             <Feather name="user" size={20} color={colors.text} />
           </Pressable>

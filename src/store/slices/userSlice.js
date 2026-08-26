@@ -18,9 +18,15 @@ const userSlice = createSlice({
       if (amount <= 0) return;
       state.wallet = (Number(state.wallet) || 0) + amount;
       persist(state);
+    },
+    debitWalletMoney: (state, action) => {
+      const amount = Number(action.payload) || 0;
+      if (amount <= 0) return;
+      state.wallet = Math.max((Number(state.wallet) || 0) - amount, 0);
+      persist(state);
     }
   }
 });
 
-export const { hydrateUser, updateProfile, addWalletMoney } = userSlice.actions;
+export const { hydrateUser, updateProfile, addWalletMoney, debitWalletMoney } = userSlice.actions;
 export default userSlice.reducer;

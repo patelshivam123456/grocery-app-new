@@ -4,6 +4,7 @@ import { Alert, Image, Modal, Pressable, StyleSheet, Switch, Text, TextInput, Vi
 import { useDispatch, useSelector } from "react-redux";
 import LoginOtpSheet from "../../components/LoginOtpSheet";
 import Screen from "../../components/Screen";
+import { selectVisibleWalletBalance } from "../../store/selectors";
 import { logout } from "../../store/slices/authSlice";
 import { updateProfile } from "../../store/slices/userSlice";
 import { colors } from "../../theme/colors";
@@ -28,6 +29,7 @@ export default function ProfileScreen({ navigation }) {
   const user = useSelector((state) => state.user);
   const mobile = useSelector((state) => state.auth.mobile);
   const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
+  const walletBalance = useSelector(selectVisibleWalletBalance);
   const [loginOpen, setLoginOpen] = React.useState(false);
   const [birthdayOpen, setBirthdayOpen] = React.useState(false);
   const [birthday, setBirthday] = React.useState(user.birthday || "");
@@ -103,7 +105,7 @@ export default function ProfileScreen({ navigation }) {
 
       <View style={styles.wallet}>
         <Text style={styles.walletLabel}>Wallet balance</Text>
-        <Text style={styles.balance}>₹{user.wallet}</Text>
+        <Text style={styles.balance}>₹{walletBalance}</Text>
       </View>
 
       <Pressable onPress={() => (isLoggedIn ? dispatch(logout()) : setLoginOpen(true))} style={[styles.logout, !isLoggedIn && styles.loginButton]}>

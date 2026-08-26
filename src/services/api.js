@@ -1,7 +1,7 @@
 import axios from "axios";
 import { loadPersistedState, savePersistedState } from "../store/storage";
+import { API_BASE_URL, API_ENDPOINTS } from "./url.config";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
 const REQUEST_SOURCE = "android";
 const TIMEOUT = 15000;
 
@@ -13,7 +13,7 @@ export function bindApiStore(store) {
 }
 
 export const api = axios.create({
-  baseURL: API_URL,
+  baseURL: API_BASE_URL,
   timeout: TIMEOUT,
   headers: {
     Accept: "*/*",
@@ -23,7 +23,7 @@ export const api = axios.create({
 });
 
 const publicApi = axios.create({
-  baseURL: API_URL,
+  baseURL: API_BASE_URL,
   timeout: TIMEOUT,
   headers: {
     Accept: "*/*",
@@ -66,7 +66,7 @@ async function refreshAccessToken() {
       const refreshToken = getAuthState().refreshToken || await getPersistedRefreshToken();
       if (!refreshToken) throw sessionError("Your session has expired. Please login again.");
 
-      const response = await publicApi.post("/authorization/auth/v1/refresh-token-app", { refreshToken });
+      const response = await publicApi.post(API_ENDPOINTS.auth.refreshToken, { refreshToken });
       const payload = getAuthPayload(response);
       const accessToken = getAccessToken(payload);
       const nextRefreshToken = getRefreshToken(payload);

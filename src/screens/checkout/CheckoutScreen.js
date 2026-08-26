@@ -10,11 +10,13 @@ import { completeCheckoutPayment } from "../../services/checkout.service";
 import { addToCart, applyCoupon, clearCart, decrementCart, setPaymentMethod } from "../../store/slices/cartSlice";
 import { placeOrder } from "../../store/slices/orderSlice";
 import { showToast } from "../../store/slices/appSlice";
-import { FREE_DELIVERY_MIN, selectCartLines, selectCartTotals, selectSelectedAddress } from "../../store/selectors";
+import { debitWalletMoney } from "../../store/slices/userSlice";
+import { FREE_DELIVERY_MIN, selectCartLines, selectCartTotals, selectSelectedAddress, selectVisibleWalletBalance } from "../../store/selectors";
 import { colors } from "../../theme/colors";
 import { type } from "../../theme/typography";
 
-const paymentMethods = ["UPI", "Card", "COD", "Wallet"];
+const paymentMethods = ["UPI", "COD"];
+const validPaymentMethods = [...paymentMethods, "Wallet"];
 
 export default function CheckoutScreen({ navigation }) {
   const lines = useSelector(selectCartLines);
@@ -25,20 +27,51 @@ export default function CheckoutScreen({ navigation }) {
   const activeCoupon = useSelector((state) => state.cart.coupon);
   const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
   const mobile = useSelector((state) => state.auth.mobile);
+  const customer = useSelector((state) => state.auth.customer);
+  const userName = useSelector((state) => state.user.name);
+  const walletBalance = useSelector(selectVisibleWalletBalance);
   const [loginOpen, setLoginOpen] = React.useState(false);
   const [paymentOpen, setPaymentOpen] = React.useState(false);
   const [placingOrder, setPlacingOrder] = React.useState(false);
+  const [walletSelected, setWalletSelected] = React.useState(paymentMethod === "UPI" && walletBalance > 0);
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch();
   const remainingForFreeDelivery = Math.max(FREE_DELIVERY_MIN - totals.subtotal, 0);
   const freeDeliveryProgress = Math.min(totals.subtotal / FREE_DELIVERY_MIN, 1);
+  const walletEnabled = (paymentMethod === "UPI" || paymentMethod === "Wallet") && walletBalance > 0;
+  const walletAmount = walletEnabled && walletSelected ? Math.min(walletBalance, totals.total) : 0;
+  const payableAmount = Math.max(totals.total - walletAmount, 0);
+  const walletCoversTotal = walletEnabled && walletSelected && totals.total > 0 && totals.total <= walletBalance;
+  const effectivePaymentMethod = walletCoversTotal ? "Wallet" : paymentMethod === "Wallet" ? "UPI" : paymentMethod;
+  React.useEffect(() => {
+    if (!validPaymentMethods.includes(paymentMethod)) {
+      dispatch(setPaymentMethod("UPI"));
+      setWalletSelected(walletBalance > 0);
+      return;
+    }
+    if (paymentMethod === "COD" || walletBalance <= 0) {
+      if (walletSelected) setWalletSelected(false);
+      return;
+    }
+    if (!walletSelected && paymentMethod === "Wallet") {
+      dispatch(setPaymentMethod("UPI"));
+      return;
+    }
+    if (!walletSelected) return;
+    if (walletCoversTotal && paymentMethod !== "Wallet") {
+      dispatch(setPaymentMethod("Wallet"));
+      return;
+    }
+    if (!walletCoversTotal && paymentMethod === "Wallet") dispatch(setPaymentMethod("UPI"));
+  }, [dispatch, paymentMethod, walletBalance, walletCoversTotal, walletSelected]);
   const goBack = () => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate("HomeFeed"));
   const placeOrderNow = async (loggedInMobile = mobile) => {
     if (placingOrder) return;
     try {
       setPlacingOrder(true);
-      const paymentResult = await completeCheckoutPayment({ lines, total: totals.total, address, instruction, paymentMethod, userMobile: loggedInMobile });
-      dispatch(placeOrder({ lines, total: totals.total, address, instruction, paymentMethod, userMobile: loggedInMobile, paymentResult }));
+      const paymentResult = await completeCheckoutPayment({ lines, total: totals.total, address, instruction, paymentMethod: effectivePaymentMethod, userMobile: loggedInMobile, customer, userName, coupon: activeCoupon, walletAmount });
+      if (walletAmount > 0) dispatch(debitWalletMoney(walletAmount));
+      dispatch(placeOrder({ lines, total: totals.total, address, instruction, paymentMethod: effectivePaymentMethod, userMobile: loggedInMobile, paymentResult, walletAmount }));
       dispatch(clearCart());
       navigation.replace("OrderSuccess", { orderNumber: paymentResult.payment?.orderNumber || paymentResult.payment?.orderPublicId || paymentResult.order?.orderNumber || paymentResult.order?.orderPublicId });
     } catch (error) {
@@ -56,7 +89,12 @@ export default function CheckoutScreen({ navigation }) {
   };
   const selectPaymentMethod = (method) => {
     dispatch(setPaymentMethod(method));
+    setWalletSelected(method === "UPI" && walletBalance > 0);
     setPaymentOpen(false);
+  };
+  const toggleWallet = () => {
+    if (!walletEnabled) return;
+    setWalletSelected((selected) => !selected);
   };
   const chooseCoupon = (coupon) => {
     if (activeCoupon?.id === coupon.id) {
@@ -149,9 +187,10 @@ export default function CheckoutScreen({ navigation }) {
           <BillRow label="Delivery charge" value={totals.delivery ? `₹${totals.delivery}` : "FREE"} />
           <BillRow label="Handling charge" value={`₹${totals.platform}`} />
           <BillRow label="Coupon discount" value={`-₹${totals.discount}`} />
+          <BillRow label="Wallet" value={walletAmount ? `-₹${walletAmount}` : "₹0"} />
           <View style={styles.totalLine}>
-            <Text style={styles.totalText}>Grand total</Text>
-            <Text style={styles.totalText}>₹{totals.total}</Text>
+            <Text style={styles.totalText}>Pay now</Text>
+            <Text style={styles.totalText}>₹{payableAmount}</Text>
           </View>
         </Section>
 
@@ -159,10 +198,19 @@ export default function CheckoutScreen({ navigation }) {
           <Pressable onPress={() => navigation.navigate("Payment")} style={styles.paymentRow}>
             <Text style={styles.walletIcon}>₹</Text>
             <View style={{ flex: 1 }}>
-              <Text style={styles.strong}>{paymentMethod}</Text>
+              <Text style={styles.strong}>{effectivePaymentMethod}</Text>
               <Text style={styles.body}>Tap to change payment method</Text>
             </View>
             <Text style={styles.chev}>›</Text>
+          </Pressable>
+          <Pressable onPress={toggleWallet} disabled={!walletEnabled} style={[styles.walletRow, !walletEnabled && styles.walletRowDisabled]}>
+            <View style={[styles.checkbox, walletSelected && walletEnabled && styles.checkboxActive]}>
+              <Text style={styles.checkboxText}>{walletSelected && walletEnabled ? "✓" : ""}</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.strong, !walletEnabled && styles.disabledText]}>Use wallet balance</Text>
+              <Text style={styles.body}>{paymentMethod === "COD" ? "Wallet is disabled for COD" : walletBalance > 0 ? `Available ₹${walletBalance}` : "No wallet balance available"}</Text>
+            </View>
           </Pressable>
         </Section>
       </ScrollView>
@@ -170,9 +218,9 @@ export default function CheckoutScreen({ navigation }) {
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom }]}>
         <Pressable onPress={() => setPaymentOpen(true)} style={styles.payUsing}>
           <Text style={styles.paySmall}>PAY USING</Text>
-          <Text style={styles.payMethod}>{paymentMethod}</Text>
+          <Text style={styles.payMethod}>{effectivePaymentMethod}</Text>
         </Pressable>
-        <AppButton title={`₹${totals.total}  Place Order ›`} onPress={submit} loading={placingOrder} style={styles.placeOrder} />
+        <AppButton title={`₹${payableAmount}  Place Order ›`} onPress={submit} loading={placingOrder} style={styles.placeOrder} />
       </View>
       <Modal visible={paymentOpen} transparent animationType="slide" onRequestClose={() => setPaymentOpen(false)}>
         <Pressable style={styles.sheetBackdrop} onPress={() => setPaymentOpen(false)}>
@@ -276,6 +324,12 @@ const styles = StyleSheet.create({
   totalText: { fontSize: type.heading, fontWeight: "900", color: colors.text },
   paymentRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   walletIcon: { width: 32, height: 32, borderRadius: 8, backgroundColor: "#EEF6FF", textAlign: "center", textAlignVertical: "center", color: colors.info, fontWeight: "900" },
+  walletRow: { minHeight: 54, borderRadius: 8, borderWidth: 1, borderColor: colors.faint, backgroundColor: "#FAFBFF", flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 10 },
+  walletRowDisabled: { opacity: 0.58 },
+  checkbox: { width: 22, height: 22, borderRadius: 5, borderWidth: 2, borderColor: colors.faint, alignItems: "center", justifyContent: "center", backgroundColor: colors.surface },
+  checkboxActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  checkboxText: { color: "#fff", fontWeight: "900", fontSize: type.body, lineHeight: 14 },
+  disabledText: { color: colors.muted },
   chev: { fontSize: 20, color: colors.muted },
   bottomBar: { position: "absolute", left: 0, right: 0, bottom: 0, minHeight: 62, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.faint, flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 12, paddingTop: 6 },
   payUsing: { minWidth: 86 },

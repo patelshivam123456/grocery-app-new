@@ -44,3 +44,9 @@ export const selectCartTotals = (state) => {
 
 export const selectSelectedAddress = (state) =>
   state.location.addresses.find((item) => item.id === state.location.selectedAddressId) || null;
+
+export const selectIsLoggedIn = (state) => Boolean(state.auth?.isLoggedIn);
+
+export const selectWalletBalance = (state) => Number(state.user?.wallet) || 0;
+
+export const selectVisibleWalletBalance = (state) => (selectIsLoggedIn(state) ? selectWalletBalance(state) : 0);

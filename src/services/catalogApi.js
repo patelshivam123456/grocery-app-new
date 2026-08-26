@@ -1,14 +1,8 @@
 import { productService } from "./product.service";
+import { API_BASE_URL, API_ENDPOINTS } from "./url.config";
 
 const PLACEHOLDER_IMAGE = "▣";
-const API_URL = process.env.EXPO_PUBLIC_API_URL || "";
-
-export const endpoints = {
-  categories: "/admin/category/v1/get-all",
-  products: "/admin/product/v1/get-all?filter=active",
-  productsByCategory: (categoryPublicId) =>
-    `/e-comm-admin/product/v1/get-all?filter=active&categoryPublicId=${encodeURIComponent(categoryPublicId)}`
-};
+export const endpoints = API_ENDPOINTS.catalog;
 
 export const catalogApi = {
   getCategories: () => productService.getCategories().then((payload) => payload?.data || []),
@@ -27,8 +21,8 @@ const toImageUrl = (value) => {
   const image = value.trim();
   if (!image) return null;
   if (image.startsWith("http")) return image;
-  if (image.startsWith("/")) return `${API_URL}${image}`;
-  return `${API_URL}/${image}`;
+  if (image.startsWith("/")) return `${API_BASE_URL}${image}`;
+  return `${API_BASE_URL}/${image}`;
 };
 
 const imageListForVariant = (variant = {}) =>

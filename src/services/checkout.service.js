@@ -18,26 +18,42 @@ function createPaymentOrder(amount) {
   };
 }
 
-function getPaymentOrderNumber(order) {
-  return order.orderNumber || order.orderPublicId;
-}
-
 function getLineVariantName(line) {
   return line.unit?.variantName || line.unit?.label || line.product?.selectedVariant?.variantName || line.product?.selectedVariant?.label || line.product?.quantity || "";
 }
 
-function createOrderDto(input, amount) {
+function getPublicId(value) {
+  return value?.publicId || value?.userPublicId || value?.customerPublicId || value?.customerId || value?.id || "";
+}
+
+function getCustomerName(input) {
+  return input.customerName || input.customer?.name || input.customer?.customerName || input.customer?.username || input.userName || "";
+}
+
+function createCheckoutPayload(input, order) {
   const productVariantAndItemMap = (input.lines || []).map((line) => ({
     productVariantPublicId: line.unit?.productVariantPublicId || line.unit?.id || line.product?.selectedVariant?.productVariantPublicId || line.product?.selectedVariant?.id || line.productId,
     productVariantName: getLineVariantName(line),
-    numberOfItems: String(line.qty)
+    numberOfItems: String(line.qty),
+    productName: line.product?.name || ""
   }));
 
   return {
+    userPublicId: input.userPublicId || getPublicId(input.customer),
+    orderPublicId: order.orderPublicId,
+    orderNumber: order.orderNumber,
+    customerName: getCustomerName(input),
     productVariantAndItemMap,
     totalItems: productVariantAndItemMap.length,
-    totalCost: amount
+    totalCost: order.amount,
+    orderStatus: "created",
+    couponCode: input.coupon?.title || input.coupon?.code || ""
   };
+}
+
+function getWalletAmount(input) {
+  if (input.paymentMethod !== "UPI" && input.paymentMethod !== "Wallet") return 0;
+  return Math.min(Number(input.walletAmount || 0), Number(input.total || 0));
 }
 
 function normalizeInitiateResponse(response) {
@@ -106,29 +122,43 @@ export async function completeCheckoutPayment(input) {
         status: "cod",
         acknowledgedAt: new Date().toISOString(),
         amount: input.total,
-        amountInPaise: input.total * 100
+        amountInPaise: input.total * 100,
+        walletAmount: 0
       }
     };
   }
 
-  const order = createPaymentOrder(input.total);
+  const walletAmount = getWalletAmount(input);
+  const payableTotal = Math.max(Number(input.total || 0) - walletAmount, 0);
+  const order = createPaymentOrder(payableTotal);
+
+  if (payableTotal <= 0) {
+    return {
+      order,
+      payment: { currency: "INR", status: "wallet", walletAmount },
+      acknowledgement: null,
+      acknowledgePayload: {
+        orderPublicId: order.orderPublicId,
+        receipt: order.receipt,
+        currency: "INR",
+        status: "wallet",
+        acknowledgedAt: new Date().toISOString(),
+        amount: payableTotal,
+        amountInPaise: 0,
+        walletAmount
+      }
+    };
+  }
 
   let initiated;
   try {
-    const orderNumber = getPaymentOrderNumber(order);
-    const initiatedResponse = await paymentService.initiate({
-      receipt: order.receipt,
-      amount: order.amount,
-      orderNumber,
-      orderDto: createOrderDto(input, order.amount)
-    });
+    const initiatedResponse = await paymentService.initiate(createCheckoutPayload(input, order));
     initiated = normalizeInitiateResponse(initiatedResponse);
   } catch (error) {
     throw error;
   }
 
-  const amount = initiated.amount || order.amount;
-  const amountInPaise = initiated.amountInPaise || amount;
+  const amountInPaise = order.amount;
   const razorpayResult = await openRazorpayCheckout({ initiated, order, input, amountInPaise });
   const acknowledgePayload = {
     paymentPublicId: initiated.paymentPublicId,

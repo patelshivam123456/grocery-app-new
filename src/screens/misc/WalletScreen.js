@@ -3,6 +3,7 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
+import { selectVisibleWalletBalance } from "../../store/selectors";
 import { addWalletMoney } from "../../store/slices/userSlice";
 import { colors } from "../../theme/colors";
 import { type } from "../../theme/typography";
@@ -10,7 +11,7 @@ import { type } from "../../theme/typography";
 const quickAmounts = [250, 500, 1000, 2000];
 
 export default function WalletScreen({ navigation }) {
-  const wallet = useSelector((state) => state.user.wallet);
+  const wallet = useSelector(selectVisibleWalletBalance);
   const [amount, setAmount] = React.useState("500");
   const dispatch = useDispatch();
   const insets = useSafeAreaInsets();

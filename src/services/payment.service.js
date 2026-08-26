@@ -1,8 +1,9 @@
 import { apiClient } from "./api";
+import { API_ENDPOINTS } from "./url.config";
 
 export const paymentService = {
-  initiate: ({ receipt, amount, orderDto }) =>
-    apiClient.post("/transaction/transaction/v1/payment-initiate", { amount, receipt, orderDto }),
+  initiate: (payload) =>
+    apiClient.post(API_ENDPOINTS.order.checkout, payload),
   acknowledge: (payload) =>
-    apiClient.post("/transaction/transaction/v1/payment-acknowledge", payload)
+    apiClient.post(API_ENDPOINTS.payment.acknowledge, payload)
 };
