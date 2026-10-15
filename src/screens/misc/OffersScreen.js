@@ -1,6 +1,7 @@
 import React from "react";
 import { Feather } from "@expo/vector-icons";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import CouponFeedbackModal from "../../components/CouponFeedbackModal";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 import { coupons } from "../../data/mockData";
@@ -14,14 +15,15 @@ export default function OffersScreen({ navigation }) {
   const totals = useSelector(selectCartTotals);
   const activeCoupon = useSelector((state) => state.cart.coupon);
   const insets = useSafeAreaInsets();
+  const [couponFeedback, setCouponFeedback] = React.useState(null);
   const goBack = () => (navigation?.canGoBack?.() ? navigation.goBack() : navigation?.navigate?.("Tabs", { screen: "Home" }));
   const useCoupon = (coupon) => {
     if (totals.subtotal < coupon.min) {
-      Alert.alert("Coupon not available", `Add items worth ₹${coupon.min - totals.subtotal} more to use ${coupon.title}.`);
+      setCouponFeedback({ type: "unavailable", coupon, remaining: coupon.min - totals.subtotal });
       return;
     }
     dispatch(applyCoupon(coupon));
-    Alert.alert("Coupon applied", `${coupon.title} applied to your cart.`);
+    setCouponFeedback({ type: "success", coupon });
   };
 
   return (
@@ -50,6 +52,7 @@ export default function OffersScreen({ navigation }) {
           );
         })}
       </ScrollView>
+      <CouponFeedbackModal feedback={couponFeedback} onClose={() => setCouponFeedback(null)} buttonLabel="Keep shopping" />
     </SafeAreaView>
   );
 }

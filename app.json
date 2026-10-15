@@ -4,13 +4,8 @@
     "slug": "just-harvst",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/just-harvst-app-icon.png",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#F8FBF5"
-    },
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -19,8 +14,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#13944A"
+        "foregroundImage": "./assets/just-harvst-adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
       },
       "package": "com.shivam_1003.justharvst"
     },
@@ -31,7 +26,24 @@
     },
     "owner": "shivam_onecorp2",
     "plugins": [
-      "expo-font"
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#F8FBF5",
+          "imageWidth": 200,
+          "enableFullScreenImage_legacy": true
+        }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Allow Just Harvst to use your microphone to search for groceries by voice.",
+          "speechRecognitionPermission": "Allow Just Harvst to recognize product and category names you speak."
+        }
+      ]
     ]
   }
 }

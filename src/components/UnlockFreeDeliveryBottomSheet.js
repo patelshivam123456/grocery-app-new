@@ -1,8 +1,8 @@
 import React from "react";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Feather } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FREE_DELIVERY_MIN } from "../store/selectors";
-import { colors } from "../theme/colors";
-import { type } from "../theme/typography";
 
 const bonusOffers = [
   { title: "Unlock extra ₹50 OFF", threshold: 899 },
@@ -12,46 +12,52 @@ const bonusOffers = [
 ];
 
 export default function UnlockFreeDeliveryBottomSheet({ visible, onClose, subtotal = 0 }) {
+  const insets = useSafeAreaInsets();
+  const amount = Math.max(Number(subtotal) || 0, 0);
   const offers = [
     { title: "Free delivery", threshold: FREE_DELIVERY_MIN },
     ...bonusOffers
   ].map((offer) => {
-    const remaining = Math.max(offer.threshold - subtotal, 0);
+    const remaining = Math.max(offer.threshold - amount, 0);
     return {
       ...offer,
       active: remaining === 0,
       remaining,
-      progress: Math.min(subtotal / offer.threshold, 1)
+      progress: Math.min(amount / offer.threshold, 1)
     };
   });
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
-        <Pressable style={styles.close} onPress={onClose}>
-          <Text style={styles.closeText}>×</Text>
-        </Pressable>
-        <View style={styles.sheet}>
-          <Text style={styles.title}>Offers for you</Text>
-          {offers.map((offer, index) => (
-            <View key={offer.title} style={styles.offerRow}>
-              <View style={styles.timeline}>
-                <View style={styles.lock}><Text style={styles.lockText}>▣</Text></View>
-                {index < offers.length - 1 ? <View style={styles.line} /> : null}
-              </View>
-              <View style={[styles.offer, offer.active && styles.offerActive]}>
-                <View style={styles.offerCopy}>
-                  <Text style={[styles.offerTitle, !offer.active && styles.offerMuted]}>{offer.active && offer.threshold === FREE_DELIVERY_MIN ? "Free delivery unlocked" : offer.title}</Text>
-                  <Text style={[styles.offerSub, !offer.active && styles.offerMuted]}>{offer.active ? "Unlocked" : `Shop for ₹${offer.remaining} more`}</Text>
-                  <View style={styles.progress}><View style={[styles.progressFill, { width: `${offer.progress * 100}%` }]} /></View>
-                </View>
-                <View style={[styles.locked, offer.active && styles.unlocked]}>
-                  <Text style={[styles.lockedText, offer.active && styles.unlockedText]}>{offer.active ? "Unlocked" : "Locked"}</Text>
-                </View>
-              </View>
+    <Modal visible={visible} transparent animationType="slide" statusBarTranslucent onRequestClose={onClose}>
+      <View style={[styles.overlay, { paddingTop: insets.top + 40 }]}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Dismiss offers" style={StyleSheet.absoluteFillObject} onPress={onClose} />
+        <View style={styles.sheetWrap}>
+          <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+            <View style={styles.header}>
+              <Text style={styles.eyebrow}>A LITTLE EXTRA, ON US</Text>
+              <Text accessibilityRole="header" style={styles.title}>Offers for you</Text>
+              <Text style={styles.subtitle}>Fill your basket. Unlock a little more joy.</Text>
             </View>
-          ))}
+            <ScrollView style={styles.scroll} contentContainerStyle={styles.offerList} showsVerticalScrollIndicator={false}>
+              {offers.map((offer, index) => (
+                <View key={offer.title} style={styles.offerRow}>
+                  <View style={styles.timeline}>
+                    <View style={[styles.milestone, offer.active && styles.milestoneActive]}><Feather name={offer.active ? "check" : index === 0 ? "truck" : "gift"} size={15} color={offer.active ? "#FFFFFF" : "#7C8C7E"} /></View>
+                    {index < offers.length - 1 ? <View style={[styles.line, offer.active && styles.lineActive]} /> : null}
+                  </View>
+                  <View style={[styles.offer, offer.active && styles.offerActive]}>
+                    <View style={styles.offerTop}>
+                      <Text style={styles.offerTitle}>{offer.active && index === 0 ? "Free delivery unlocked" : offer.title}</Text>
+                      <View style={[styles.status, offer.active && styles.statusActive]}><Feather name={offer.active ? "check-circle" : "lock"} size={11} color={offer.active ? "#237344" : "#8B938A"} /><Text style={[styles.statusText, offer.active && styles.statusTextActive]}>{offer.active ? "Unlocked" : "Locked"}</Text></View>
+                    </View>
+                    <Text style={styles.offerSub}>{offer.active ? "You're all set — this milestone is unlocked" : `Add ₹${offer.remaining} more to your basket`}</Text>
+                    <View accessible accessibilityRole="progressbar" accessibilityLabel={`${offer.title} progress`} accessibilityValue={{ min: 0, max: offer.threshold, now: Math.min(amount, offer.threshold) }} style={styles.progress}><View style={[styles.progressFill, { width: `${offer.progress * 100}%` }]} /></View>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+          <Pressable accessibilityRole="button" accessibilityLabel="Close offers" hitSlop={8} style={styles.close} onPress={onClose}><Feather name="x" size={23} color="#FFFFFF" /></Pressable>
         </View>
       </View>
     </Modal>
@@ -59,26 +65,31 @@ export default function UnlockFreeDeliveryBottomSheet({ visible, onClose, subtot
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.72)" },
-  close: { position: "absolute", alignSelf: "center", bottom: "68%", width: 54, height: 54, borderRadius: 40, backgroundColor: "#171821", alignItems: "center", justifyContent: "center", zIndex: 2 },
-  closeText: { color: "#fff", fontSize: 34, lineHeight: 36 },
-  sheet: { backgroundColor: "#0E131A", borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingHorizontal: 14, paddingTop: 22, paddingBottom: 34 },
-  title: { color: "#fff", fontWeight: "900", fontSize: type.heading, marginBottom: 16 },
+  overlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(17,28,22,0.55)" },
+  sheetWrap: { maxHeight: "86%", flexShrink: 1 },
+  sheet: { backgroundColor: "#FFFFFF", borderTopLeftRadius: 28, borderTopRightRadius: 28, flexShrink: 1, paddingHorizontal: 16, paddingTop: 32 },
+  close: { position: "absolute", top: -24, alignSelf: "center", width: 48, height: 48, borderRadius: 24, backgroundColor: "#203B2A", borderWidth: 4, borderColor: "#FFFFFF", alignItems: "center", justifyContent: "center", zIndex: 10, elevation: 8 },
+  header: { paddingHorizontal: 6, paddingBottom: 20 },
+  eyebrow: { color: "#6C9776", fontSize: 9, fontWeight: "800", letterSpacing: 1.7 },
+  title: { color: "#203B2A", fontWeight: "900", fontSize: 25, letterSpacing: -0.6, marginTop: 6 },
+  subtitle: { color: "#8B968B", fontSize: 12, lineHeight: 17, marginTop: 6 },
+  scroll: { flexGrow: 0, flexShrink: 1 },
+  offerList: { paddingBottom: 5 },
   offerRow: { flexDirection: "row", gap: 10 },
-  timeline: { width: 26, alignItems: "center" },
-  lock: { width: 22, height: 22, borderRadius: 11, backgroundColor: "#3B424D", alignItems: "center", justifyContent: "center" },
-  lockText: { color: "#fff", fontSize: 9 },
-  line: { flex: 1, width: 2, minHeight: 34, backgroundColor: "#515866", marginVertical: 4 },
-  offer: { flex: 1, minHeight: 66, marginBottom: 12, borderRadius: 14, backgroundColor: "#1B2430", padding: 13, flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 10 },
-  offerActive: { backgroundColor: "#fff", borderWidth: 4, borderColor: colors.success },
-  offerCopy: { flex: 1, minWidth: 0 },
-  offerTitle: { color: colors.text, fontSize: type.heading, fontWeight: "900" },
-  offerSub: { color: colors.muted, marginTop: 5, fontSize: type.subheading, fontWeight: "700" },
-  offerMuted: { color: "#9DA6B6" },
-  locked: { borderRadius: 9, backgroundColor: "#E8ECF2", paddingHorizontal: 12, paddingVertical: 8 },
-  lockedText: { color: "#7A8492", fontWeight: "900", fontSize: type.body },
-  unlocked: { backgroundColor: "#EAFBEF" },
-  unlockedText: { color: colors.primaryDark },
-  progress: { height: 6, borderRadius: 3, backgroundColor: "#EEF1F4", marginTop: 12, overflow: "hidden" },
-  progressFill: { height: 6, borderRadius: 3, backgroundColor: colors.success }
+  timeline: { width: 30, alignItems: "center", paddingTop: 10 },
+  milestone: { width: 30, height: 30, borderRadius: 15, backgroundColor: "#F0F4EE", alignItems: "center", justifyContent: "center" },
+  milestoneActive: { backgroundColor: "#319657" },
+  line: { flex: 1, width: 2, minHeight: 28, backgroundColor: "#E7EDE4", marginVertical: 5 },
+  lineActive: { backgroundColor: "#95CBA1" },
+  offer: { flex: 1, minHeight: 86, marginBottom: 12, borderRadius: 15, backgroundColor: "#F8FAF6", borderWidth: 1, borderColor: "#E9EDE4", padding: 13 },
+  offerActive: { backgroundColor: "#ECF8EE", borderColor: "#A3D6AF" },
+  offerTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
+  offerTitle: { flex: 1, color: "#2C402F", fontSize: 13, lineHeight: 18, fontWeight: "800" },
+  offerSub: { color: "#8A9587", marginTop: 6, fontSize: 10, lineHeight: 15 },
+  status: { borderRadius: 8, backgroundColor: "#EBEFE8", paddingHorizontal: 7, paddingVertical: 5, flexDirection: "row", alignItems: "center", gap: 4 },
+  statusText: { color: "#8B938A", fontWeight: "700", fontSize: 9 },
+  statusActive: { backgroundColor: "#D7EFDC" },
+  statusTextActive: { color: "#237344" },
+  progress: { height: 5, borderRadius: 3, backgroundColor: "#E3EADD", marginTop: 10, overflow: "hidden" },
+  progressFill: { height: 5, borderRadius: 3, backgroundColor: "#319657" }
 });

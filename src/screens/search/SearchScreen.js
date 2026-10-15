@@ -1,5 +1,7 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Feather } from "@expo/vector-icons";
+import { useFocusEffect, useIsFocused } from "@react-navigation/native";
 import { useSelector } from "react-redux";
 import Screen from "../../components/Screen";
 import ProductCard from "../../components/ProductCard";
@@ -7,6 +9,7 @@ import EmptyState from "../../components/EmptyState";
 import CommerceBottomStack, { bottomStackHeight } from "../../components/CommerceBottomStack";
 import { colors } from "../../theme/colors";
 import { type } from "../../theme/typography";
+import useVoiceSearch from "../../hooks/useVoiceSearch";
 
 const sortOptions = [
   { key: "popular", label: "Relevance" },
@@ -15,7 +18,7 @@ const sortOptions = [
   { key: "discount", label: "Discount" }
 ];
 
-export default function SearchScreen({ navigation }) {
+export default function SearchScreen({ navigation, route }) {
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState([]);
   const [filterOpen, setFilterOpen] = useState(false);
@@ -48,22 +51,41 @@ export default function SearchScreen({ navigation }) {
     setFilters([]);
     rememberSearch(text);
   }, [rememberSearch]);
+  const voice = useVoiceSearch((text, isFinal) => {
+    setQuery(text);
+    setFilters([]);
+    if (isFinal) rememberSearch(text);
+  });
+  const isFocused = useIsFocused();
+  useFocusEffect(useCallback(() => () => voice.cancel(), [voice.cancel]));
+  React.useEffect(() => {
+    if (isFocused && route?.params?.voiceSearch) {
+      navigation.setParams({ voiceSearch: false });
+      voice.start();
+    }
+  }, [isFocused, route?.params?.voiceSearch, navigation, voice.start]);
 
   return (
     <View style={styles.root}>
       <Screen contentStyle={styles.content}>
-        <TextInput
+        <View style={[styles.searchRow, voice.status === "listening" && styles.searchRowListening]}>
+          <Feather name="search" size={19} color="#7B8876" />
+          <TextInput
           value={query}
           onChangeText={(text) => {
+            voice.cancel();
             setQuery(text);
             setFilters([]);
           }}
           onSubmitEditing={() => rememberSearch()}
-          placeholder="Search groceries"
+          placeholder={voice.status === "listening" ? "Listening…" : "Search products or categories"}
           style={styles.input}
           returnKeyType="search"
-          autoFocus
+          autoFocus={!route?.params?.voiceSearch}
         />
+          <Pressable accessibilityRole="button" accessibilityLabel={voice.status === "idle" ? "Speak to search" : "Stop voice search"} onPress={voice.toggle} style={[styles.micButton, voice.status !== "idle" && styles.micButtonActive]}><Feather name={voice.status === "listening" ? "square" : "mic"} size={19} color={voice.status !== "idle" ? "#FFFFFF" : "#347448"} /></Pressable>
+        </View>
+        {voice.status !== "idle" || voice.error ? <View accessibilityLiveRegion="polite" style={styles.voiceHint}><Feather name={voice.error ? "info" : "mic"} size={14} color={voice.error ? "#A66B48" : "#347448"} /><Text style={[styles.voiceHintText, voice.error && styles.voiceHintError]}>{voice.error || (voice.status === "requesting" ? "Getting the microphone ready…" : "Listening… say a product or category name")}</Text></View> : null}
         {!normalizedQuery ? (
           <>
             <Text style={styles.title}>Recent searches</Text>
@@ -216,7 +238,14 @@ function Chip({ text, onPress }) {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   content: { paddingBottom: bottomStackHeight + 82 },
-  input: { height: 52, backgroundColor: colors.surface, borderRadius: 12, borderWidth: 1, borderColor: colors.faint, paddingHorizontal: 14, fontSize: type.subheading },
+  searchRow: { minHeight: 52, flexDirection: "row", alignItems: "center", gap: 9, backgroundColor: colors.surface, borderRadius: 13, borderWidth: 1, borderColor: colors.faint, paddingLeft: 13, paddingRight: 7 },
+  searchRowListening: { borderColor: "#75AA7F", backgroundColor: "#F4FAF0" },
+  input: { flex: 1, height: 50, color: colors.text, fontSize: 12 },
+  micButton: { width: 39, height: 39, borderRadius: 12, backgroundColor: "#EFF6E9", alignItems: "center", justifyContent: "center" },
+  micButtonActive: { backgroundColor: "#347448" },
+  voiceHint: { flexDirection: "row", alignItems: "center", gap: 7, paddingHorizontal: 4 },
+  voiceHintText: { flex: 1, color: "#78916E", fontSize: 11, lineHeight: 16 },
+  voiceHintError: { color: "#A66B48" },
   title: { fontSize: type.heading, fontWeight: "600", color: colors.text },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: { paddingHorizontal: 14, paddingVertical: 10, backgroundColor: colors.surface, borderRadius: 12, borderWidth: 1, borderColor: colors.faint },

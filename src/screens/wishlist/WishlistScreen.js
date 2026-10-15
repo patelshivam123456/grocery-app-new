@@ -9,14 +9,13 @@ import LocationSheet from "../../components/LocationSheet";
 import SafeRemoteImage from "../../components/SafeRemoteImage";
 import { addToCart, decrementCart } from "../../store/slices/cartSlice";
 import { removeWishlist } from "../../store/slices/wishlistSlice";
-import { selectSelectedAddress } from "../../store/selectors";
+import { selectSelectedAddress, selectWishlistProducts } from "../../store/selectors";
 import { colors } from "../../theme/colors";
 import { type } from "../../theme/typography";
 
 export default function WishlistScreen({ navigation }) {
   const [locationOpen, setLocationOpen] = React.useState(false);
-  const ids = useSelector((state) => state.wishlist.ids);
-  const products = useSelector((state) => state.products.items.filter((item) => ids.includes(item.id)));
+  const products = useSelector(selectWishlistProducts);
   const cartItems = useSelector((state) => state.cart.items);
   const address = useSelector(selectSelectedAddress);
   const dispatch = useDispatch();

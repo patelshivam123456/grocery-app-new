@@ -4,13 +4,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 import SafeRemoteImage from "../../components/SafeRemoteImage";
 import { addToCart } from "../../store/slices/cartSlice";
+import { selectUserOrders } from "../../store/selectors";
 import { colors } from "../../theme/colors";
 import { type } from "../../theme/typography";
 
 export default function OrdersScreen({ navigation }) {
   const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
-  const mobile = useSelector((state) => state.auth.mobile);
-  const orders = useSelector((state) => state.orders.items.filter((order) => isLoggedIn && order.userMobile === mobile));
+  const orders = useSelector(selectUserOrders);
   const dispatch = useDispatch();
   const goBack = () => (navigation.canGoBack() ? navigation.goBack() : navigation.getParent()?.navigate("Home", { screen: "HomeFeed" }));
   return (

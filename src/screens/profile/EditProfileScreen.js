@@ -15,7 +15,7 @@ export default function EditProfileScreen({ navigation }) {
   const [photo, setPhoto] = useState(user.photo);
   const dispatch = useDispatch();
   const pick = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, quality: 0.7 });
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], allowsEditing: true, quality: 0.7 });
     if (!result.canceled) setPhoto(result.assets[0].uri);
   };
   const save = () => {

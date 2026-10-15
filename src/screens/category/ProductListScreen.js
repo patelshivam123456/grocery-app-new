@@ -1,5 +1,6 @@
 import React from "react";
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from "react-native";
+import { Feather } from "@expo/vector-icons";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 import FloatingCartPill from "../../components/FloatingCartPill";
@@ -153,23 +154,22 @@ function applySelectedFilters(products, selectedFilters) {
 }
 
 function SortSheet({ visible, selected, onClose, onSelect }) {
+  const insets = useSafeAreaInsets();
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="fade" statusBarTranslucent onRequestClose={onClose}>
       <View style={styles.sheetOverlay}>
-        <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
-        <Pressable style={styles.closeFloat} onPress={onClose}>
-          <Text style={styles.closeText}>×</Text>
-        </Pressable>
-        <View style={styles.sortSheet}>
-          <Text style={styles.sheetTitle}>Sort by</Text>
-          {sortOptions.map((option) => (
-            <Pressable key={option.key} style={styles.radioRow} onPress={() => onSelect(option.key)}>
-              <View style={[styles.radio, selected === option.key && styles.radioActive]}>
-                {selected === option.key ? <View style={styles.radioDot} /> : null}
-              </View>
-              <Text style={styles.sheetOption}>{option.label}</Text>
-            </Pressable>
-          ))}
+        <Pressable accessibilityRole="button" accessibilityLabel="Dismiss sort options" style={StyleSheet.absoluteFillObject} onPress={onClose} />
+        <View style={styles.sortSheetWrap}>
+          <View style={[styles.sortSheet, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+            <Text style={styles.sheetTitle}>Sort by</Text>
+            {sortOptions.map((option) => (
+              <Pressable accessibilityRole="radio" accessibilityState={{ checked: selected === option.key }} key={option.key} style={styles.radioRow} onPress={() => onSelect(option.key)}>
+                <View style={[styles.radio, selected === option.key && styles.radioActive]}>{selected === option.key ? <View style={styles.radioDot} /> : null}</View>
+                <Text style={styles.sheetOption}>{option.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <Pressable accessibilityRole="button" accessibilityLabel="Close sort options" hitSlop={8} style={styles.closeFloat} onPress={onClose}><Feather name="x" size={22} color="#FFFFFF" /></Pressable>
         </View>
       </View>
     </Modal>
@@ -183,9 +183,11 @@ function filterKey(filter) {
 function FilterSheet({ visible, selected, onChange, onClear, onClose, optionsByGroup, initialGroup = "Type" }) {
   const [group, setGroup] = React.useState(initialGroup);
   const [query, setQuery] = React.useState("");
+  const insets = useSafeAreaInsets();
+  const { height } = useWindowDimensions();
   const groups = Object.keys(optionsByGroup).filter((item) => optionsByGroup[item]?.length);
   const activeGroup = groups.includes(group) ? group : groups[0] || "Type";
-  const options = (optionsByGroup[activeGroup] || []).filter((item) => item.label.toLowerCase().includes(query.toLowerCase()));
+  const options = (optionsByGroup[activeGroup] || []).filter((item) => item.label.toLowerCase().includes(query.trim().toLowerCase()));
   const hasSelection = selected.length > 0;
 
   React.useEffect(() => {
@@ -201,51 +203,39 @@ function FilterSheet({ visible, selected, onChange, onClear, onClose, optionsByG
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.sheetOverlay}>
-        <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
-        <Pressable style={styles.closeFloat} onPress={onClose}>
-          <Text style={styles.closeText}>×</Text>
-        </Pressable>
-        <View style={styles.filterSheet}>
-          <Text style={styles.sheetTitle}>Filters</Text>
-          <View style={styles.sheetSearch}>
-            <Text style={styles.searchIcon}>⌕</Text>
-            <TextInput value={query} onChangeText={setQuery} placeholder="Search across filters..." placeholderTextColor={colors.muted} style={styles.sheetInput} />
-          </View>
-          <View style={styles.filterBody}>
-            <View style={styles.filterGroups}>
-              {groups.map((item) => (
-                <Pressable key={item} onPress={() => setGroup(item)} style={[styles.groupItem, activeGroup === item && styles.groupItemActive]}>
-                  <Text style={[styles.groupText, activeGroup === item && styles.groupTextActive]}>{item}</Text>
-                </Pressable>
-              ))}
+    <Modal visible={visible} transparent animationType="slide" statusBarTranslucent onRequestClose={onClose}>
+      <View style={[styles.sheetOverlay, { paddingTop: insets.top + 40 }]}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Dismiss filters" style={StyleSheet.absoluteFillObject} onPress={onClose} />
+        <View style={[styles.filterSheetWrap, { height: Math.max(200, Math.min(height * 0.82, height - insets.top - 48)) }]}>
+          <View style={[styles.filterSheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+            <View style={styles.filterHeading}><View><Text accessibilityRole="header" style={styles.sheetTitle}>Filters</Text><Text style={styles.filterSubtitle}>Find your favourites, your way</Text></View></View>
+            <View style={styles.sheetSearch}><Feather name="search" size={18} color="#7A897A" /><TextInput accessibilityLabel="Search filters" value={query} onChangeText={setQuery} placeholder="Search across filters" placeholderTextColor="#A0AA9A" style={styles.sheetInput} /></View>
+            <View style={styles.filterBody}>
+              <ScrollView style={styles.filterGroups} showsVerticalScrollIndicator={false}>
+                {groups.map((item) => {
+                  const count = selected.filter((value) => value.group === item).length;
+                  return <Pressable accessibilityRole="tab" accessibilityState={{ selected: activeGroup === item }} key={item} onPress={() => setGroup(item)} style={[styles.groupItem, activeGroup === item && styles.groupItemActive]}><Text style={[styles.groupText, activeGroup === item && styles.groupTextActive]}>{item}</Text>{count > 0 ? <View style={styles.groupCount}><Text style={styles.groupCountText}>{count}</Text></View> : null}</Pressable>;
+                })}
+              </ScrollView>
+              <ScrollView style={styles.filterOptions} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.filterOptionsContent}>
+                <Text style={styles.optionsHeading}>{activeGroup}</Text>
+                {options.map((item) => {
+                  const active = selected.some((value) => filterKey(value) === filterKey(item));
+                  return <Pressable key={filterKey(item)} accessibilityRole="checkbox" accessibilityState={{ checked: active }} accessibilityLabel={item.label} style={[styles.checkRow, active && styles.checkRowActive]} onPress={() => toggle(item)}>
+                    <View style={[styles.checkbox, active && styles.checkboxActive]}>{active ? <Feather name="check" size={12} color="#FFFFFF" /> : null}</View>
+                    {item.image ? <View style={styles.optionThumb}><SafeRemoteImage uri={item.image} style={styles.optionPhoto} resizeMode="contain" fallback={item.image} fallbackStyle={styles.optionEmoji} /></View> : null}
+                    <Text numberOfLines={2} style={[styles.sheetOption, active && styles.sheetOptionActive]}>{item.label}</Text>
+                  </Pressable>;
+                })}
+                {!options.length ? <Text style={styles.noFilterResults}>No filters match your search.</Text> : null}
+              </ScrollView>
             </View>
-            <ScrollView style={styles.filterOptions} showsVerticalScrollIndicator={false}>
-              {options.map((item) => (
-                <Pressable key={filterKey(item)} style={[styles.checkRow, selected.some((value) => filterKey(value) === filterKey(item)) && styles.checkRowActive]} onPress={() => toggle(item)}>
-                  <View style={[styles.checkbox, selected.some((value) => filterKey(value) === filterKey(item)) && styles.checkboxActive]}>
-                    {selected.some((value) => filterKey(value) === filterKey(item)) ? <Text style={styles.checkboxTick}>✓</Text> : null}
-                  </View>
-                  {item.image ? (
-                    <View style={styles.optionThumb}>
-                      <SafeRemoteImage uri={item.image} style={styles.optionPhoto} fallback={item.image} fallbackStyle={styles.optionEmoji} />
-                    </View>
-                  ) : null}
-                  <Text numberOfLines={2} style={[styles.sheetOption, selected.some((value) => filterKey(value) === filterKey(item)) && styles.sheetOptionActive]}>{item.label}</Text>
-                  
-                </Pressable>
-              ))}
-            </ScrollView>
+            <View style={styles.sheetButtons}>
+              <Pressable accessibilityRole="button" accessibilityLabel="Clear filters" disabled={!hasSelection} style={[styles.sheetButton, styles.clearButton, !hasSelection && styles.sheetButtonDisabled]} onPress={onClear}><Text style={[styles.clearText, !hasSelection && styles.disabledText]}>Clear all</Text></Pressable>
+              <Pressable accessibilityRole="button" accessibilityLabel="Apply filters" style={[styles.sheetButton, styles.applyButton]} onPress={onClose}><Text style={styles.applyText}>Apply filters{hasSelection ? ` (${selected.length})` : ""}</Text><Feather name="arrow-right" size={16} color="#FFFFFF" /></Pressable>
+            </View>
           </View>
-          <View style={styles.sheetButtons}>
-            <Pressable style={[styles.sheetButton, styles.clearButton, !hasSelection && styles.sheetButtonDisabled]} onPress={onClear}>
-              <Text style={[styles.clearText, !hasSelection && styles.disabledText]}>Clear Filter</Text>
-            </Pressable>
-            <Pressable style={[styles.sheetButton, styles.applyButton, !hasSelection && styles.applyButtonDisabled]} onPress={onClose}>
-              <Text style={[styles.applyText, !hasSelection && styles.disabledApplyText]}>Apply</Text>
-            </Pressable>
-          </View>
+          <Pressable accessibilityRole="button" accessibilityLabel="Close filters" hitSlop={8} style={styles.closeFloat} onPress={onClose}><Feather name="x" size={22} color="#FFFFFF" /></Pressable>
         </View>
       </View>
     </Modal>
@@ -352,9 +342,9 @@ export default function ProductListScreen({ route, navigation }) {
     setFilterGroup(groupName);
     setFilterOpen(true);
   };
-  const openSearch = () => {
+  const openSearch = (voiceSearch = false) => {
     const parent = navigation.getParent();
-    if (parent) parent.navigate("Search");
+    if (parent) parent.navigate("Search", { screen: "SearchHome", params: { voiceSearch } });
   };
 
   return (
@@ -366,7 +356,8 @@ export default function ProductListScreen({ route, navigation }) {
         <View style={styles.headerTextWrap}>
           <Text style={styles.headerTitle}>{title}</Text>
         </View>
-        <Pressable onPress={openSearch} style={styles.circleButton}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Speak to search" onPress={() => openSearch(true)} style={styles.circleButton}><Feather name="mic" size={18} color="#347448" /></Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel="Search products" onPress={() => openSearch()} style={styles.circleButton}>
           <Text style={styles.headerAction}>⌕</Text>
         </Pressable>
       </View>
@@ -537,44 +528,49 @@ const styles = StyleSheet.create({
   meta: { marginTop: 5, fontSize: type.body, color: colors.muted, fontWeight: "800" },
   empty: { marginTop: 20, textAlign: "center", color: colors.muted, fontSize: type.body },
   errorText: { marginTop: 12, textAlign: "center", color: colors.danger, fontSize: type.body, fontWeight: "800" },
-  sheetOverlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.72)" },
-  closeFloat: { position: "absolute", alignSelf: "center", bottom: "78%", width: 40, height: 40, borderRadius: 20, backgroundColor: "#171821", alignItems: "center", justifyContent: "center", zIndex: 2 },
-  closeText: { color: "#fff", fontSize: 24, lineHeight: 26 },
-  sortSheet: { backgroundColor: "#fff", borderTopLeftRadius: 18, borderTopRightRadius: 18, paddingTop: 22, paddingHorizontal: 18, paddingBottom: 34 },
-  filterSheet: { maxHeight: "78%", backgroundColor: "#F7F8FE", borderTopLeftRadius: 18, borderTopRightRadius: 18, paddingTop: 18, paddingHorizontal: 14, paddingBottom: 14 },
-  sheetTitle: { fontSize: type.heading, color: colors.text, fontWeight: "900", marginBottom: 14 },
-  radioRow: { flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 13 },
-  radio: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: colors.primary, alignItems: "center", justifyContent: "center" },
-  radioActive: { borderWidth: 3 },
+  sheetOverlay: { flex: 1, justifyContent: "flex-end", paddingTop: 48, backgroundColor: "rgba(19,34,23,0.55)" },
+  closeFloat: { position: "absolute", alignSelf: "center", top: -23, width: 46, height: 46, borderRadius: 23, backgroundColor: "#203B2A", borderWidth: 4, borderColor: "#FFFFFF", alignItems: "center", justifyContent: "center", zIndex: 10, elevation: 8 },
+  sortSheetWrap: { flexShrink: 1, maxHeight: "90%" },
+  sortSheet: { backgroundColor: "#FFFFFF", borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingTop: 32, paddingHorizontal: 20 },
+  filterSheetWrap: { maxHeight: "100%" },
+  filterSheet: { flex: 1, backgroundColor: "#FFFFFF", borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingTop: 32, paddingHorizontal: 16 },
+  filterHeading: { flexDirection: "row", alignItems: "center", marginBottom: 16 },
+  sheetTitle: { fontSize: 20, color: "#243B2B", fontWeight: "800", letterSpacing: -0.5 },
+  filterSubtitle: { color: "#93A08C", fontSize: 11, marginTop: 5 },
+  radioRow: { flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 16 },
+  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, borderColor: "#B8C9B4", alignItems: "center", justifyContent: "center" },
+  radioActive: { borderWidth: 2, borderColor: colors.primary },
   radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.primary },
-  sheetOption: { fontSize: type.subheading, color: colors.text, fontWeight: "700" },
-  sheetSearch: { height: 50, borderRadius: 14, borderWidth: 1, borderColor: colors.faint, backgroundColor: "#fff", paddingHorizontal: 12, flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 },
+  sheetOption: { flex: 1, fontSize: 12, lineHeight: 17, color: "#53654D", fontWeight: "600" },
+  sheetSearch: { height: 44, borderRadius: 12, borderWidth: 1, borderColor: "#E8EDE4", backgroundColor: "#F7F9F4", paddingHorizontal: 12, flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 16 },
   searchIcon: { fontSize: 22, color: colors.text },
-  sheetInput: { flex: 1, fontSize: type.subheading, color: colors.text },
-  filterBody: { height: 380, borderRadius: 12, borderWidth: 1, borderColor: colors.faint, backgroundColor: "#fff", flexDirection: "row", overflow: "hidden" },
-  filterGroups: { width: 100, borderRightWidth: 1, borderRightColor: colors.faint, backgroundColor: "#FCFDFB" },
-  groupItem: { minHeight: 65, justifyContent: "center", paddingHorizontal: 12, borderRightWidth: 4, borderRightColor: "transparent" },
-  groupItemActive: { backgroundColor: "#F0FFF0", borderRightColor: colors.primary },
-  groupText: { fontSize: 10, color: colors.text, fontWeight: "700" },
-  groupTextActive: { color: colors.primary, fontWeight: "900" },
-  filterOptions: { flex: 1, paddingHorizontal: 1, paddingVertical: 2 },
-  checkRow: { minHeight: 66, borderRadius: 10, flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 8, marginBottom: 4 },
-  checkRowActive: { backgroundColor: "#F0FFF0" },
-  optionThumb: { width: 30, height: 30, borderRadius: 100, backgroundColor: "#F3F4F6", borderWidth: 1, borderColor: colors.faint, alignItems: "center", justifyContent: "center", overflow: "hidden" },
+  sheetInput: { flex: 1, fontSize: 12, color: colors.text },
+  filterBody: { flex: 1, minHeight: 0, borderRadius: 15, borderWidth: 1, borderColor: "#E9EEE4", backgroundColor: "#FFFFFF", flexDirection: "row", overflow: "hidden" },
+  filterGroups: { width: 104, flexGrow: 0, flexShrink: 0, borderRightWidth: 1, borderRightColor: "#E9EEE4", backgroundColor: "#F7F9F3" },
+  groupItem: { minHeight: 57, justifyContent: "center", paddingHorizontal: 12, paddingVertical: 10, borderLeftWidth: 3, borderLeftColor: "transparent", gap: 5 },
+  groupItemActive: { backgroundColor: "#EAF5E6", borderLeftColor: "#28834A" },
+  groupText: { fontSize: 11, color: "#86927D", fontWeight: "600", lineHeight: 16 },
+  groupTextActive: { color: "#2A7942", fontWeight: "800" },
+  groupCount: { alignSelf: "flex-start", backgroundColor: "#D4EBCB", borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2 },
+  groupCountText: { color: "#2A7942", fontSize: 8, fontWeight: "800" },
+  filterOptions: { flex: 1 },
+  filterOptionsContent: { padding: 9, paddingBottom: 18 },
+  optionsHeading: { color: "#A0AC98", fontSize: 9, fontWeight: "700", marginHorizontal: 6, marginTop: 5, marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.8 },
+  checkRow: { minHeight: 58, borderRadius: 10, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 7, paddingVertical: 8, marginBottom: 5 },
+  checkRowActive: { backgroundColor: "#EFF7EA" },
+  optionThumb: { width: 31, height: 34, borderRadius: 8, backgroundColor: "#F8FAF5", alignItems: "center", justifyContent: "center", overflow: "hidden" },
   optionPhoto: { width: "100%", height: "100%" },
   optionEmoji: { fontSize: 20 },
-  sheetOptionActive: { color: colors.primaryDark, fontWeight: "900" },
-  checkbox: { width: 16, height: 16, borderRadius: 3, borderWidth: 2, borderColor: colors.primary, alignItems: "center", justifyContent: "center" },
-  checkboxActive: { backgroundColor: colors.primary },
-  checkboxTick: { color: "#fff", fontSize: type.body, fontWeight: "900" },
-  sheetButtons: { flexDirection: "row", gap: 12, marginTop: 14,paddingBottom: 8 },
-  sheetButton: { flex: 1, height: 50, borderRadius: 13, alignItems: "center", justifyContent: "center" },
-  clearButton: { borderWidth: 1, borderColor: colors.primary, backgroundColor: "#fff" },
-  applyButton: { backgroundColor: colors.primary },
-  sheetButtonDisabled: { borderColor: "#CED4DE", backgroundColor: "#F7F8FE" },
-  applyButtonDisabled: { backgroundColor: "#CED4DE" },
-  clearText: { fontSize: type.subheading, color: colors.primary, fontWeight: "900" },
-  applyText: { fontSize: type.subheading, color: "#fff", fontWeight: "900" },
-  disabledText: { color: "#AEB6C2" },
-  disabledApplyText: { color: "#fff" }
+  sheetOptionActive: { color: "#286E3C", fontWeight: "800" },
+  checkbox: { width: 17, height: 17, borderRadius: 5, borderWidth: 1.5, borderColor: "#BDCDB6", alignItems: "center", justifyContent: "center" },
+  checkboxActive: { backgroundColor: "#28834A", borderColor: "#28834A" },
+  noFilterResults: { color: "#9AA58F", fontSize: 11, lineHeight: 17, padding: 10 },
+  sheetButtons: { flexDirection: "row", gap: 12, marginTop: 16 },
+  sheetButton: { flex: 1, minHeight: 46, borderRadius: 12, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 8 },
+  clearButton: { flex: 0.8, borderWidth: 1, borderColor: "#D8E4D0", backgroundColor: "#FFFFFF" },
+  applyButton: { flex: 1.2, backgroundColor: "#28834A" },
+  sheetButtonDisabled: { borderColor: "#E9EDE4", backgroundColor: "#F8FAF5" },
+  clearText: { fontSize: 12, color: "#43804F", fontWeight: "700" },
+  applyText: { fontSize: 12, color: "#FFFFFF", fontWeight: "800" },
+  disabledText: { color: "#BBC4B3" }
 });

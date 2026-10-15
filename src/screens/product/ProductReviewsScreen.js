@@ -2,6 +2,7 @@ import React from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
+import { selectProductReviews } from "../../store/selectors";
 import { colors } from "../../theme/colors";
 import { type } from "../../theme/typography";
 
@@ -9,7 +10,7 @@ export default function ProductReviewsScreen({ route, navigation }) {
   const { productId } = route.params;
   const [query, setQuery] = React.useState("");
   const product = useSelector((state) => state.products.items.find((item) => item.id === productId));
-  const reviews = useSelector((state) => state.products.reviews?.[productId] || []);
+  const reviews = useSelector((state) => selectProductReviews(state, productId));
   const filtered = reviews.filter((review) =>
     `${review.name} ${review.text}`.toLowerCase().includes(query.trim().toLowerCase())
   );

@@ -11,7 +11,7 @@ import SectionHeader from "../../components/SectionHeader";
 import { addToCart, decrementCart } from "../../store/slices/cartSlice";
 import { toggleWishlist } from "../../store/slices/wishlistSlice";
 import { addProductReview, viewProduct } from "../../store/slices/productSlice";
-import { selectCartTotals } from "../../store/selectors";
+import { selectCartTotals, selectProductReviews } from "../../store/selectors";
 import { colors } from "../../theme/colors";
 import { type } from "../../theme/typography";
 
@@ -29,10 +29,11 @@ export default function ProductDetailsScreen({ route, navigation }) {
   const [activeImage, setActiveImage] = React.useState(0);
   const [zoomOpen, setZoomOpen] = React.useState(false);
   const galleryRef = React.useRef(null);
-  const product = useSelector((state) => state.products.items.find((item) => item.id === productId));
+  const products = useSelector((state) => state.products.items);
+  const product = products.find((item) => item.id === productId);
   const wished = useSelector((state) => state.wishlist.ids.includes(productId));
-  const reviews = useSelector((state) => state.products.reviews?.[productId] || []);
-  const similar = useSelector((state) => state.products.items.filter((item) => item.category === product?.category && item.id !== productId).slice(0, 4));
+  const reviews = useSelector((state) => selectProductReviews(state, productId));
+  const similar = React.useMemo(() => product ? products.filter((item) => item.category === product.category && item.id !== product.id).slice(0, 4) : [], [products, product]);
   const cartItems = useSelector((state) => state.cart.items);
   const totals = useSelector(selectCartTotals);
 
@@ -93,7 +94,7 @@ export default function ProductDetailsScreen({ route, navigation }) {
           >
             {gallery.map((item) => (
               <Pressable key={item.label} onPress={() => setZoomOpen(true)} style={[styles.heroSlide, { width }]}>
-                <SafeRemoteImage uri={item.image} style={styles.heroPhoto} fallback={item.image} fallbackStyle={styles.heroEmoji} />
+                <SafeRemoteImage uri={item.image} imageSize={1000} style={styles.heroPhoto} fallback={item.image} fallbackStyle={styles.heroEmoji} />
               </Pressable>
             ))}
           </ScrollView>
@@ -270,7 +271,7 @@ function ProductDetailsSheet({ visible, product, unit, image, wished, onClose, o
         <View style={styles.detailsSheet}>
           <View style={styles.detailsHeader}>
             <View style={styles.sheetThumb}>
-              <SafeRemoteImage uri={image} style={styles.sheetThumbPhoto} fallback={image} fallbackStyle={styles.sheetThumbEmoji} />
+              <SafeRemoteImage uri={image} imageSize={1000} style={styles.sheetThumbPhoto} fallback={image} fallbackStyle={styles.sheetThumbEmoji} />
             </View>
             <Text numberOfLines={2} style={styles.sheetTitleText}>{product.name}</Text>
             <Pressable onPress={onWish} style={styles.sheetIcon}>
@@ -281,7 +282,7 @@ function ProductDetailsSheet({ visible, product, unit, image, wished, onClose, o
           <ScrollView contentContainerStyle={[styles.sheetBody, { paddingBottom: 162 + insets.bottom }]} showsVerticalScrollIndicator={false}>
             <Text style={styles.allDetailsTitle}>All details</Text>
             <View style={styles.packImageWrap}>
-              <SafeRemoteImage uri={image} style={styles.packImage} resizeMode="contain" fallback={image} fallbackStyle={styles.packEmoji} />
+              <SafeRemoteImage uri={image} imageSize={1000} style={styles.packImage} resizeMode="contain" fallback={image} fallbackStyle={styles.packEmoji} />
             </View>
             <View style={styles.accordionCard}>
               <View style={styles.accordionHeader}>
@@ -359,7 +360,7 @@ function ZoomModal({ visible, image, onClose }) {
       <View style={styles.zoomRoot}>
         <Pressable onPress={onClose} style={styles.zoomClose}><Feather name="x" size={26} color="#fff" /></Pressable>
         <ScrollView maximumZoomScale={3} minimumZoomScale={1} contentContainerStyle={styles.zoomContent}>
-          <SafeRemoteImage uri={image} style={styles.zoomImage} resizeMode="contain" fallback={image} fallbackStyle={styles.zoomEmoji} />
+          <SafeRemoteImage uri={image} imageSize={1000} style={styles.zoomImage} resizeMode="contain" fallback={image} fallbackStyle={styles.zoomEmoji} />
         </ScrollView>
       </View>
     </Modal>
