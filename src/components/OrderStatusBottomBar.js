@@ -6,7 +6,7 @@ import { useSelector } from "react-redux";
 import { colors } from "../theme/colors";
 import { type } from "../theme/typography";
 
-export default function OrderStatusBottomBar({ navigation, bottomOffset }) {
+export default function OrderStatusBottomBar({ navigation, bottomOffset, inline = false }) {
   const insets = useSafeAreaInsets();
   const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
   const mobile = useSelector((state) => state.auth.mobile);
@@ -17,7 +17,7 @@ export default function OrderStatusBottomBar({ navigation, bottomOffset }) {
   return (
     <Pressable
       onPress={() => navigation.getParent()?.navigate("Orders", { screen: "Tracking", params: { orderId: order.id } })}
-      style={[styles.bar, { bottom: bottomOffset == null ? 6 + insets.bottom : bottomOffset }]}
+      style={[styles.bar, inline ? { position: "relative" } : { bottom: bottomOffset == null ? 6 + insets.bottom : bottomOffset }]}
     >
       <View style={styles.icon}><Feather name="truck" size={19} color={colors.primary} /></View>
       <View style={styles.copy}>

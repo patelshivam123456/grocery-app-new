@@ -31,6 +31,7 @@ export default function HomeScreen({ navigation }) {
   const [offersOpen, setOffersOpen] = React.useState(false);
   const [couponFeedback, setCouponFeedback] = React.useState(null);
   const [quickProduct, setQuickProduct] = React.useState(null);
+  const [dockHeight, setDockHeight] = React.useState(76);
   const products = useSelector((state) => state.products.items);
   const categories = useSelector((state) => state.products.categories);
   const loading = useSelector((state) => state.products.loading);
@@ -131,7 +132,7 @@ export default function HomeScreen({ navigation }) {
         </ScrollView>
       </View>
 
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingBottom: 156 + insets.bottom }]}>
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingBottom: dockHeight + 12 }]}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.bannerRow} snapToInterval={294} decelerationRate="fast">
           {banners.map((banner) => {
             const matches = products.filter((item) => banner.match.test(`${item.name} ${item.categoryName} ${item.subCategory}`));
@@ -240,7 +241,7 @@ export default function HomeScreen({ navigation }) {
         {recent.length > 0 ? <ProductGridSection title="Take another look" subtitle="Your recently viewed picks" products={recent} onPress={goProduct} onViewDetails={openQuick} onSeeAll={openProductsSection} /> : null}
         <View style={styles.footer}><Text style={styles.footerTitle}>{"Fresh groceries.\nHappy everyday."}</Text><Text style={styles.footerSubtitle}>A little freshness from Just Harvst 🌿</Text></View>
       </ScrollView>
-      <View pointerEvents="box-none" style={styles.commerceDock}><CommerceBottomStack navigation={navigation} /></View>
+      <CommerceBottomStack navigation={navigation} onHeightChange={setDockHeight} />
       <UnlockFreeDeliveryBottomSheet visible={offersOpen} onClose={() => setOffersOpen(false)} subtotal={totals.subtotal} />
       <CouponFeedbackModal feedback={couponFeedback} onClose={() => setCouponFeedback(null)} buttonLabel="Keep shopping" />
       <LocationSheet visible={locationOpen} onClose={() => setLocationOpen(false)} />
@@ -399,5 +400,5 @@ const styles = StyleSheet.create({
   footer: { paddingHorizontal: 22, paddingTop: 9, paddingBottom: 6 },
   footerTitle: { color: "#C4CDC1", fontSize: 32, lineHeight: 36, fontWeight: "900", letterSpacing: -1.2 },
   footerSubtitle: { color: "#959E91", fontSize: 11, marginTop: 11 },
-  commerceDock: { position: "absolute", left: 0, right: 0, bottom: 0, height: 140, zIndex: 30 }
+
 });

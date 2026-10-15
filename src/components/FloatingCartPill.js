@@ -7,7 +7,7 @@ import SafeRemoteImage from "./SafeRemoteImage";
 import { colors } from "../theme/colors";
 import { type } from "../theme/typography";
 
-export default function FloatingCartPill({ navigation, bottomOffset, onPress, style }) {
+export default function FloatingCartPill({ navigation, bottomOffset, onPress, style, inline = false }) {
   const lines = useSelector(selectCartLines);
   const totals = useSelector(selectCartTotals);
   const insets = useSafeAreaInsets();
@@ -18,7 +18,7 @@ export default function FloatingCartPill({ navigation, bottomOffset, onPress, st
   return (
     <Pressable
       onPress={onPress || (() => navigation.navigate("Cart"))}
-      style={[styles.pill, { bottom: bottomOffset == null ? 92 + insets.bottom : bottomOffset }, style]}
+      style={[styles.pill, inline ? { position: "relative" } : { bottom: bottomOffset == null ? 92 + insets.bottom : bottomOffset }, style]}
     >
       <View style={styles.previewWrap}>
         {preview.map(({ product }, index) => (
