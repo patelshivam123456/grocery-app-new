@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { selectCartTotals } from "../store/selectors";
 import { colors } from "../theme/colors";
 import { type } from "../theme/typography";
+import { AnimatedCartCount } from "./HomeMotion";
 
 export default function CartPill({
   navigation,
@@ -33,7 +34,7 @@ export default function CartPill({
     >
       <View style={styles.copy}>
         <Text numberOfLines={1} style={styles.title}>Cart</Text>
-        <Text numberOfLines={1} style={styles.sub}>{totals.count} items • ₹{totals.total}</Text>
+        <AnimatedCartCount count={totals.count} numberOfLines={1} style={styles.sub}>{totals.count} items • ₹{totals.total}</AnimatedCartCount>
       </View>
     </Pressable>
   );

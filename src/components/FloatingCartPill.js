@@ -6,6 +6,7 @@ import { selectCartLines, selectCartTotals } from "../store/selectors";
 import SafeRemoteImage from "./SafeRemoteImage";
 import { colors } from "../theme/colors";
 import { type } from "../theme/typography";
+import { AnimatedCartCount } from "./HomeMotion";
 
 export default function FloatingCartPill({ navigation, bottomOffset, onPress, style, inline = false }) {
   const lines = useSelector(selectCartLines);
@@ -29,7 +30,7 @@ export default function FloatingCartPill({ navigation, bottomOffset, onPress, st
       </View>
       <View style={styles.copy}>
         <Text numberOfLines={1} style={styles.title}>View cart</Text>
-        <Text numberOfLines={1} style={styles.sub}>{totals.count} items • ₹{totals.total}</Text>
+        <AnimatedCartCount count={totals.count} numberOfLines={1} style={styles.sub}>{totals.count} items • ₹{totals.total}</AnimatedCartCount>
       </View>
       <View style={styles.arrow}>
         <Text style={styles.arrowText}>›</Text>

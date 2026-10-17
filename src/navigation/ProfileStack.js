@@ -8,21 +8,12 @@ import SettingsInfoScreen from "../screens/settings/SettingsInfoScreen";
 import SupportScreen from "../screens/support/SupportScreen";
 import WalletScreen from "../screens/misc/WalletScreen";
 import { stackOptions } from "./stackOptions";
-import { Ionicons } from "@expo/vector-icons";
-import { TouchableOpacity } from "react-native";
 
 const Stack = createNativeStackNavigator();
 export default function ProfileStack() {
   return (
     <Stack.Navigator screenOptions={stackOptions}>
-      <Stack.Screen name="ProfileHome" component={ProfileScreen} options={({ navigation }) => ({
-    title: "Profile",
-    headerLeft: () => (
-      <TouchableOpacity onPress={() => navigation.goBack()}>
-        <Ionicons name="arrow-back" size={24} />
-      </TouchableOpacity>
-    ),
-  })} />
+      <Stack.Screen name="ProfileHome" component={ProfileScreen} options={{ headerShown: false }} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ title: "Edit profile" }} />
       <Stack.Screen name="Addresses" component={AddressListScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false }} />

@@ -10,6 +10,7 @@ import CommerceBottomStack, { bottomStackHeight } from "../../components/Commerc
 import { colors } from "../../theme/colors";
 import { type } from "../../theme/typography";
 import useVoiceSearch from "../../hooks/useVoiceSearch";
+import { productMatchesSearch } from "../../services/productSearch";
 
 const sortOptions = [
   { key: "popular", label: "Relevance" },
@@ -162,19 +163,6 @@ function SearchFilterModal({ visible, options, selected, onChange, onClear, onCl
       </View>
     </Modal>
   );
-}
-
-function productMatchesSearch(product, query) {
-  const searchable = [
-    product.name,
-    product.brand,
-    product.categoryName,
-    product.subCategory,
-    product.section,
-    ...(product.tags || []),
-    ...(product.variants || []).map((variant) => variant.variantName || variant.label)
-  ].filter(Boolean).join(" ").toLowerCase();
-  return searchable.includes(query.toLowerCase());
 }
 
 function buildFilterOptions(products) {

@@ -16,7 +16,7 @@ const Stack = createNativeStackNavigator();
 export default function CategoryStack() {
   return (
     <Stack.Navigator screenOptions={stackOptions}>
-      <Stack.Screen name="CategoryHome" component={CategoryScreen} options={{ title: "Categories" }} />
+      <Stack.Screen name="CategoryHome" component={CategoryScreen} options={{ title: "Categories", headerShown: false }} />
       <Stack.Screen name="ProductList" component={ProductListScreen} options={{ headerShown: false }} />
       <Stack.Screen name="ProductDetails" component={ProductDetailsScreen} options={{ headerShown: false }} />
       <Stack.Screen name="ProductReviews" component={ProductReviewsScreen} options={{ headerShown: false }} />

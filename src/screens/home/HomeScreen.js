@@ -1,7 +1,7 @@
 import React from "react";
 import { Feather, Ionicons } from "@expo/vector-icons";
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 import ProductCard from "../../components/ProductCard";
 import NavratriSpecial from "../../components/NavratriSpecial";
@@ -17,6 +17,8 @@ import { applyCoupon } from "../../store/slices/cartSlice";
 import { coupons } from "../../data/mockData";
 import { HOME_COLLECTIONS, SEASONAL_COLLECTIONS, EXPLORE_COLLECTIONS, productsForCollection, buyAgainProducts, featuredProducts, curatedProducts } from "../../services/homeCollections";
 import { colors } from "../../theme/colors";
+import useReducedMotion from "../../hooks/useReducedMotion";
+import { HomeMotionContext, MotionPressable as Pressable, MotionEntrance, MotionVisibility } from "../../components/HomeMotion";
 
 const categoryColors = ["#EAF5E9", "#FFF1DE", "#EDF1FF", "#FFF6DC", "#FCECEC", "#F1EDFA"];
 const banners = [
@@ -26,12 +28,51 @@ const banners = [
 
 export default function HomeScreen({ navigation }) {
   const dispatch = useDispatch();
-  const insets = useSafeAreaInsets();
+  const reducedMotion = useReducedMotion();
+  const scrollRef = React.useRef(null);
+  const scrollOffset = React.useRef(0);
+  const scrollAnimation = React.useRef(null);
+  const [showBackToTop, setShowBackToTop] = React.useState(false);
   const [locationOpen, setLocationOpen] = React.useState(false);
   const [offersOpen, setOffersOpen] = React.useState(false);
   const [couponFeedback, setCouponFeedback] = React.useState(null);
   const [quickProduct, setQuickProduct] = React.useState(null);
   const [dockHeight, setDockHeight] = React.useState(76);
+  const cancelScrollAnimation = React.useCallback(() => {
+    if (scrollAnimation.current !== null) {
+      cancelAnimationFrame(scrollAnimation.current);
+      scrollAnimation.current = null;
+    }
+  }, []);
+  React.useEffect(() => cancelScrollAnimation, [cancelScrollAnimation]);
+  React.useEffect(() => { if (reducedMotion !== false) cancelScrollAnimation(); }, [reducedMotion, cancelScrollAnimation]);
+  const scrollToTop = React.useCallback(() => {
+    cancelScrollAnimation();
+    const startOffset = Math.max(0, scrollOffset.current);
+    if (!startOffset) return;
+    if (reducedMotion !== false) {
+      scrollOffset.current = 0;
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+      return;
+    }
+    const duration = Math.min(1000, Math.max(650, startOffset * 0.15));
+    let startedAt;
+    const step = (timestamp) => {
+      if (startedAt === undefined) startedAt = timestamp;
+      const progress = Math.min((timestamp - startedAt) / duration, 1);
+      // Ease out gently as the header comes back into view.
+      const y = startOffset * Math.pow(1 - progress, 3);
+      scrollOffset.current = y;
+      scrollRef.current?.scrollTo({ y, animated: false });
+      scrollAnimation.current = progress < 1 ? requestAnimationFrame(step) : null;
+    };
+    scrollAnimation.current = requestAnimationFrame(step);
+  }, [cancelScrollAnimation, reducedMotion]);
+  const handleScroll = React.useCallback((event) => {
+    scrollOffset.current = event.nativeEvent.contentOffset.y;
+    const visible = scrollOffset.current > 320;
+    if (visible !== showBackToTop) setShowBackToTop(visible);
+  }, [showBackToTop]);
   const products = useSelector((state) => state.products.items);
   const categories = useSelector((state) => state.products.categories);
   const loading = useSelector((state) => state.products.loading);
@@ -85,31 +126,50 @@ export default function HomeScreen({ navigation }) {
   };
 
   return (
+    <HomeMotionContext.Provider value={reducedMotion}>
     <SafeAreaView edges={["top", "left", "right"]} style={styles.root}>
+      <ScrollView
+        ref={scrollRef}
+        style={styles.scroll}
+        contentContainerStyle={{ paddingBottom: Math.max(dockHeight, 76) + 76 }}
+        stickyHeaderIndices={[2]}
+        showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        onScrollBeginDrag={cancelScrollAnimation}
+        onTouchStart={cancelScrollAnimation}
+        scrollEventThrottle={32}
+      >
       <View style={styles.headerWrap}>
         <View style={styles.topRow}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Choose delivery location" onPress={() => setLocationOpen(true)} style={styles.deliveryCopy}>
-            <Text style={styles.brand}>JUST HARVST • AT YOUR DOOR IN</Text>
-            <View style={styles.timeRow}>
-              <Text style={styles.time}>8 minutes</Text>
-              <View style={styles.speedChip}><Ionicons name="flash" size={11} color="#315326" /><Text style={styles.speedText}>Super quick</Text></View>
-            </View>
-            <View style={styles.addressRow}>
-              <Feather name="map-pin" size={12} color="#35412E" />
-              <Text numberOfLines={1} style={styles.addr}>{address ? `${address.label} · ${address.line1}` : "Select your delivery location"}</Text>
-              <Feather name="chevron-down" size={14} color="#35412E" />
-            </View>
-          </Pressable>
+          <View style={styles.brand}>
+            <Image source={require("../../../assets/just-harvst-logo.png")} style={styles.brandLogo} resizeMode="contain" accessibilityLabel="Just Harvst" />
+          </View>
           {isLoggedIn ? (
             <Pressable accessibilityRole="button" accessibilityLabel="Open wallet" onPress={() => navigation.getParent()?.getParent()?.navigate("Wallet")} style={styles.headerCircle}>
-              <Ionicons name="wallet-outline" size={20} color={colors.text} />
+              <Ionicons name="wallet-outline" size={19} color="#0D7163" />
               <Text numberOfLines={1} adjustsFontSizeToFit style={styles.walletAmount}>₹{walletBalance}</Text>
             </Pressable>
           ) : null}
           <Pressable accessibilityRole="button" accessibilityLabel="Open profile" onPress={() => navigation.getParent()?.navigate("Profile", { screen: "ProfileHome" })} style={styles.headerCircle}>
-            <Feather name="user" size={21} color={colors.text} />
+            <Feather name="user" size={21} color="#0D7163" />
           </Pressable>
         </View>
+        <Pressable accessibilityRole="button" accessibilityLabel="Choose delivery location" onPress={() => setLocationOpen(true)} style={styles.deliveryPanel}>
+          <View style={styles.deliveryMark}><Feather name="truck" size={20} color="#FFFFFF" /></View>
+          <View style={styles.deliveryCopy}>
+            <View style={styles.timeRow}>
+              <Text style={styles.deliveryLabel}>Delivery in</Text>
+              <Text style={styles.time}>8 minutes</Text>
+            </View>
+            <View style={styles.addressRow}>
+              <Feather name="map-pin" size={12} color="#47736A" />
+              <Text numberOfLines={1} style={styles.addr}>{address ? `${address.label} · ${address.line1}` : "Select your delivery location"}</Text>
+            </View>
+          </View>
+          <Feather name="chevron-down" size={17} color="#0D7163" />
+        </Pressable>
+      </View>
+      <View style={styles.searchWrap}>
         <Pressable accessibilityRole="button" accessibilityLabel="Search groceries" onPress={() => navigation.getParent()?.navigate("Search", { screen: "SearchHome" })} style={styles.search}>
           <Feather name="search" size={20} color="#253228" />
           <Text numberOfLines={1} style={styles.searchText}>Search for “milk, atta, fruits”</Text>
@@ -117,14 +177,16 @@ export default function HomeScreen({ navigation }) {
           <Pressable accessibilityRole="button" accessibilityLabel="Speak to search" hitSlop={6} onPress={(event) => {
             event.stopPropagation();
             navigation.getParent()?.navigate("Search", { screen: "SearchHome", params: { voiceSearch: true } });
-          }} style={{ padding: 6 }}><Feather name="mic" size={18} color="#347448" /></Pressable>
+          }} style={{ padding: 6 }}><Feather name="mic" size={18} color="#0D7163" /></Pressable>
         </Pressable>
+      </View>
+      <View style={styles.headerTabs}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickTabs}>
-          {homeTabs.map((tab) => (
+          {homeTabs.map((tab, index) => (
             <Pressable key={tab.id} accessibilityRole="button" accessibilityLabel={`Shop ${tab.label}`} onPress={() => { if (tab.id !== "all") openCategory({ id: tab.id, name: tab.label }); }} style={styles.quickTab}>
-              <View style={[styles.quickImageWrap, tab.id === "all" && styles.quickImageActive]}>
+              <MotionEntrance delay={Math.min(index * 30, 150)} style={[styles.quickImageWrap, tab.id === "all" && styles.quickImageActive]}>
                 {tab.id === "all" ? <Text style={styles.groceryIcon}>🛒</Text> : <SafeRemoteImage uri={tab.iconUrl} style={styles.quickPhoto} resizeMode="contain" fallbackStyle={styles.quickIcon} />}
-              </View>
+              </MotionEntrance>
               <Text numberOfLines={1} style={[styles.quickLabel, tab.id === "all" && styles.quickActive]}>{tab.label}</Text>
               {tab.id === "all" ? <View style={styles.quickUnderline} /> : null}
             </Pressable>
@@ -132,7 +194,8 @@ export default function HomeScreen({ navigation }) {
         </ScrollView>
       </View>
 
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingBottom: dockHeight + 12 }]}>
+      <View style={styles.content}>
+        <MotionEntrance delay={60}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.bannerRow} snapToInterval={294} decelerationRate="fast">
           {banners.map((banner) => {
             const matches = products.filter((item) => banner.match.test(`${item.name} ${item.categoryName} ${item.subCategory}`));
@@ -150,13 +213,14 @@ export default function HomeScreen({ navigation }) {
             );
           })}
         </ScrollView>
+        </MotionEntrance>
 
         <View style={styles.categorySection}>
           <HomeSectionHeading title="Shop by category" subtitle="Your everyday essentials, all here" onPress={openCategories} />
           <View style={styles.catGrid}>
             {categories.map((cat, index) => (
               <Pressable key={cat.id} accessibilityRole="button" accessibilityLabel={`Shop ${cat.name}`} onPress={() => openCategory(cat)} style={styles.cat}>
-                <View style={[styles.catImage, { backgroundColor: categoryColors[index % categoryColors.length] }]}><SafeRemoteImage uri={cat.iconUrl} style={styles.catPhoto} resizeMode="contain" fallbackStyle={styles.catIcon} /></View>
+                <MotionEntrance delay={Math.min(index * 30, 150)} style={[styles.catImage, { backgroundColor: categoryColors[index % categoryColors.length] }]}><SafeRemoteImage uri={cat.iconUrl} style={styles.catPhoto} resizeMode="contain" fallbackStyle={styles.catIcon} /></MotionEntrance>
                 <Text numberOfLines={2} style={styles.catText}>{cat.name}</Text>
               </Pressable>
             ))}
@@ -240,7 +304,19 @@ export default function HomeScreen({ navigation }) {
         <ProductGridSection title="Picked for your pantry" subtitle="Make room for your daily favourites" products={[...products].reverse().slice(0, 8)} onPress={goProduct} onViewDetails={openQuick} onSeeAll={openProductsSection} />
         {recent.length > 0 ? <ProductGridSection title="Take another look" subtitle="Your recently viewed picks" products={recent} onPress={goProduct} onViewDetails={openQuick} onSeeAll={openProductsSection} /> : null}
         <View style={styles.footer}><Text style={styles.footerTitle}>{"Fresh groceries.\nHappy everyday."}</Text><Text style={styles.footerSubtitle}>A little freshness from Just Harvst 🌿</Text></View>
+      </View>
       </ScrollView>
+      <MotionVisibility visible={showBackToTop} style={[styles.backToTopPosition, { bottom: Math.max(dockHeight, 76) + 20 }]}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Back to top"
+          accessibilityHint="Scrolls to the top of the home page"
+          onPress={scrollToTop}
+          style={styles.backToTop}
+        >
+          <Feather name="arrow-up" size={23} color="#FFFFFF" />
+        </Pressable>
+      </MotionVisibility>
       <CommerceBottomStack navigation={navigation} onHeightChange={setDockHeight} />
       <UnlockFreeDeliveryBottomSheet visible={offersOpen} onClose={() => setOffersOpen(false)} subtotal={totals.subtotal} />
       <CouponFeedbackModal feedback={couponFeedback} onClose={() => setCouponFeedback(null)} buttonLabel="Keep shopping" />
@@ -256,6 +332,7 @@ export default function HomeScreen({ navigation }) {
         }}
       />
     </SafeAreaView>
+    </HomeMotionContext.Provider>
   );
 }
 
@@ -282,31 +359,37 @@ function ProductGridSection({ title, subtitle, products, onPress, onViewDetails,
 
 const styles = StyleSheet.create({
   root: { flex: 1, position: "relative", backgroundColor: "#FFFFFF" },
-  headerWrap: { backgroundColor: "#FFE477", paddingTop: 12, borderBottomWidth: 1, borderBottomColor: "#F2DC84" },
-  topRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 18 },
+  headerWrap: { backgroundColor: "#F7FBF9", paddingTop: 2 },
+  searchWrap: { backgroundColor: "#F7FBF9", borderBottomWidth: 1, borderBottomColor: "#DFEBE6" },
+  headerTabs: { backgroundColor: "#F7FBF9", paddingTop: 12, borderBottomWidth: 1, borderBottomColor: "#DFEBE6" },
+  backToTopPosition: { position: "absolute", right: 18, zIndex: 45 },
+  backToTop: { width: 48, height: 48, borderRadius: 24, backgroundColor: "#0D7163", borderWidth: 2, borderColor: "#FFFFFF", alignItems: "center", justifyContent: "center", elevation: 6, shadowColor: "#073E35", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.2, shadowRadius: 6 },
+  topRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16 },
+  brand: { flex: 1, minWidth: 0 },
+  brandLogo: { width: 108, height: 56 },
+  deliveryPanel: { flexDirection: "row", alignItems: "center", gap: 10, marginHorizontal: 16, marginTop: 6, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 15, backgroundColor: "#E5F2EC", borderWidth: 1, borderColor: "#D6E9DF" },
+  deliveryMark: { width: 38, height: 38, borderRadius: 12, backgroundColor: "#0D7163", alignItems: "center", justifyContent: "center" },
   deliveryCopy: { flex: 1, minWidth: 0 },
-  brand: { fontSize: 9, letterSpacing: 1.2, fontWeight: "800", color: "#525534" },
-  timeRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 2 },
-  time: { fontSize: 29, letterSpacing: -1.2, fontWeight: "900", color: "#1D2B1D" },
-  speedChip: { flexDirection: "row", alignItems: "center", gap: 2, backgroundColor: "#F4F5C3", borderRadius: 6, paddingHorizontal: 5, paddingVertical: 4 },
-  speedText: { color: "#315326", fontSize: 8, fontWeight: "800" },
+  timeRow: { flexDirection: "row", alignItems: "baseline", flexWrap: "wrap", columnGap: 5 },
+  deliveryLabel: { color: "#315F53", fontSize: 12, fontWeight: "500" },
+  time: { fontSize: 20, letterSpacing: -0.5, fontWeight: "800", color: "#0B5144" },
   addressRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
-  addr: { color: "#35412E", fontSize: 12, flexShrink: 1 },
-  headerCircle: { width: 42, height: 42, borderRadius: 21, backgroundColor: "#FFFAE8", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#F4D674" },
-  walletAmount: { color: colors.text, fontWeight: "800", fontSize: 9 },
-  search: { height: 48, borderRadius: 13, backgroundColor: "#FFFFFF", flexDirection: "row", alignItems: "center", paddingHorizontal: 13, gap: 9, marginHorizontal: 16, marginTop: 15, marginBottom: 13, borderWidth: 1, borderColor: "#F0DE9A" },
-  searchText: { color: "#7B827B", flex: 1, fontSize: 13 },
-  searchDivider: { height: 20, width: 1, backgroundColor: "#EAEDE7" },
+  addr: { color: "#47736A", fontSize: 11, flexShrink: 1 },
+  headerCircle: { width: 42, height: 42, borderRadius: 14, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#DFEBE6" },
+  walletAmount: { color: "#0D7163", fontWeight: "800", fontSize: 9 },
+  search: { height: 48, borderRadius: 14, backgroundColor: "#FFFFFF", flexDirection: "row", alignItems: "center", paddingHorizontal: 13, gap: 9, marginHorizontal: 16, marginTop: 12, marginBottom: 14, borderWidth: 1, borderColor: "#D5E5DC" },
+  searchText: { color: "#78877F", flex: 1, fontSize: 13 },
+  searchDivider: { height: 20, width: 1, backgroundColor: "#E2EBE6" },
   quickTabs: { gap: 14, paddingHorizontal: 16 },
   quickTab: { alignItems: "center", width: 62, paddingBottom: 12, position: "relative" },
   quickImageWrap: { width: 42, height: 40, alignItems: "center", justifyContent: "center", borderRadius: 12 },
-  quickImageActive: { backgroundColor: "#FFF2B6" },
+  quickImageActive: { backgroundColor: "#DDEFE5", borderWidth: 1, borderColor: "#C5E1D2" },
   quickIcon: { fontSize: 25 },
   groceryIcon: { fontSize: 29 },
   quickPhoto: { width: 36, height: 36, borderRadius: 10 },
-  quickLabel: { color: "#615A38", fontWeight: "600", marginTop: 5, fontSize: 10, textAlign: "center" },
-  quickActive: { fontWeight: "900", color: "#1D2B1D" },
-  quickUnderline: { position: "absolute", bottom: 0, height: 3, width: 42, borderTopLeftRadius: 3, borderTopRightRadius: 3, backgroundColor: "#225635" },
+  quickLabel: { color: "#63786D", fontWeight: "600", marginTop: 5, fontSize: 10, textAlign: "center" },
+  quickActive: { fontWeight: "800", color: "#0D7163" },
+  quickUnderline: { position: "absolute", bottom: 0, height: 3, width: 32, borderTopLeftRadius: 3, borderTopRightRadius: 3, backgroundColor: "#0D7163" },
   scroll: { flex: 1 },
   content: { paddingTop: 18, gap: 25 },
   bannerRow: { gap: 12, paddingHorizontal: 16 },

@@ -1,28 +1,22 @@
 import React from "react";
 import { Feather, Ionicons } from "@expo/vector-icons";
-import { Alert, Image, Modal, Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
+import { Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 import LoginOtpSheet from "../../components/LoginOtpSheet";
-import Screen from "../../components/Screen";
-import { selectVisibleWalletBalance } from "../../store/selectors";
+import LogoutConfirmation from "../../components/LogoutConfirmation";
+import { selectUserOrders, selectVisibleWalletBalance } from "../../store/selectors";
 import { logout } from "../../store/slices/authSlice";
 import { updateProfile } from "../../store/slices/userSlice";
-import { colors } from "../../theme/colors";
-import { type } from "../../theme/typography";
+import { showToast } from "../../store/slices/appSlice";
+import { birthdayError, formatBirthdayInput, profileInitials } from "../../services/profile";
+import appConfig from "../../../app.json";
 
-const quickActions = [
-  ["Your orders", "package", "Orders"],
-  ["Fresh Money", "wallet", "Wallet"],
-  ["Need help?", "message-circle", "Support"]
-];
-
-const infoRows = [
-  ["Address book", "map-pin", "Addresses"],
-  ["Bookmarked recipes", "bookmark", null],
-  ["Your wishlist", "heart", "Wishlist"],
-  ["GST details", "file-text", null],
-  ["Settings", "settings", "Settings"],
-  ["Edit profile", "edit-2", "EditProfile"]
+const appRows = [
+  { title: "App settings", subtitle: "Notifications, language & appearance", icon: "settings", route: "Settings" },
+  { title: "Privacy policy", icon: "shield", page: "PrivacyPolicy" },
+  { title: "Terms & conditions", icon: "file-text", page: "TermsConditions" },
+  { title: "About Just Harvst", icon: "info", page: "AboutJustHarvst" }
 ];
 
 export default function ProfileScreen({ navigation }) {
@@ -30,160 +24,181 @@ export default function ProfileScreen({ navigation }) {
   const mobile = useSelector((state) => state.auth.mobile);
   const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
   const walletBalance = useSelector(selectVisibleWalletBalance);
-  const [loginOpen, setLoginOpen] = React.useState(false);
-  const [birthdayOpen, setBirthdayOpen] = React.useState(false);
-  const [birthday, setBirthday] = React.useState(user.birthday || "");
+  const orders = useSelector(selectUserOrders);
   const dispatch = useDispatch();
-  const goBack = () => (navigation.canGoBack() ? navigation.goBack() : navigation.getParent()?.navigate("Home", { screen: "HomeFeed" }));
-  const open = (route) => {
-    if (route === "Orders") navigation.getParent()?.navigate("Orders", { screen: "OrdersHome" });
-    else if (route === "Wishlist") navigation.getParent()?.getParent()?.navigate("Wishlist");
-    else navigation.navigate(route);
+  const insets = useSafeAreaInsets();
+  const pendingAction = React.useRef(null);
+  const [loginOpen, setLoginOpen] = React.useState(false);
+  const [logoutOpen, setLogoutOpen] = React.useState(false);
+  const [birthdayOpen, setBirthdayOpen] = React.useState(false);
+  const [birthday, setBirthday] = React.useState("");
+  const [dateError, setDateError] = React.useState("");
+  const [photoFailed, setPhotoFailed] = React.useState(false);
+  React.useEffect(() => setPhotoFailed(false), [user.photo]);
+  React.useEffect(() => { if (!isLoggedIn) setLogoutOpen(false); }, [isLoggedIn]);
+  const goBack = () => navigation.canGoBack() ? navigation.goBack() : navigation.getParent()?.navigate("Home", { screen: "HomeFeed" });
+  const accountAction = (action) => {
+    if (isLoggedIn) action();
+    else { pendingAction.current = action; setLoginOpen(true); }
   };
+  const openLogin = () => { pendingAction.current = null; setLoginOpen(true); };
+  const openOrders = () => accountAction(() => navigation.getParent()?.navigate("Orders", { screen: "OrdersHome" }));
+  const openWishlist = () => accountAction(() => navigation.getParent()?.getParent()?.navigate("Wishlist"));
+  const openWallet = () => accountAction(() => navigation.navigate("Wallet"));
+  const editProfile = () => accountAction(() => navigation.navigate("EditProfile"));
+  const openBirthday = () => accountAction(() => { setBirthday(user.birthday || ""); setDateError(""); setBirthdayOpen(true); });
   const saveBirthday = () => {
-    if (!birthday.trim()) {
-      Alert.alert("Enter birthday", "Please enter your birthday.");
-      return;
-    }
+    if (!isLoggedIn) { setBirthdayOpen(false); openLogin(); return; }
+    const error = birthdayError(birthday);
+    if (error) { setDateError(error); return; }
     dispatch(updateProfile({ birthday: birthday.trim() }));
     setBirthdayOpen(false);
-    Alert.alert("Birthday saved", "Your birthday details have been updated.");
+    dispatch(showToast("Birthday updated"));
   };
+  const signOut = () => {
+    setLogoutOpen(false);
+    pendingAction.current = null;
+    dispatch(logout());
+    dispatch(showToast("Logged out"));
+  };
+  const name = String(user.name || "").trim() || "Your account";
+  const phone = mobile ? (String(mobile).startsWith("+") ? mobile : `+91 ${mobile}`) : "Add your details to complete your profile";
+
   return (
-    <Screen style={styles.screen} contentStyle={{ paddingBottom: 28 }}>
-      <View style={styles.hero}>
-        <View style={styles.avatarWrap}>
-          {user.photo ? <Image source={{ uri: user.photo }} style={styles.photo} /> : <Feather name="user" size={38} color={colors.text} />}
-        </View>
-        <Text style={styles.name}>{isLoggedIn ? "Your account" : "Login to your account"}</Text>
-        <Text style={styles.phone}>{isLoggedIn && mobile ? `+91 ${mobile}` : "Login to see your mobile number"}</Text>
+    <SafeAreaView edges={["top", "left", "right"]} style={styles.root}>
+      <View style={styles.header}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={goBack} style={styles.iconButton}><Feather name="arrow-left" size={22} color="#264532" /></Pressable>
+        <Text accessibilityRole="header" style={styles.headerTitle}>My account</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel="Open app settings" onPress={() => navigation.navigate("Settings")} style={styles.iconButton}><Feather name="settings" size={21} color="#0D7163" /></Pressable>
       </View>
-
-      <Pressable onPress={() => setBirthdayOpen(true)} style={styles.birthday}>
-        <View>
-          <Text style={styles.birthdayTitle}>Add your birthday</Text>
-          <Text style={styles.enter}>{user.birthday ? user.birthday : "Enter details ›"}</Text>
-        </View>
-        <Text style={styles.cake}>🎂</Text>
-      </Pressable>
-
-      <View style={styles.quickGrid}>
-        {quickActions.map(([label, icon, route]) => (
-          <Pressable key={label} onPress={() => open(route)} style={styles.quickCard}>
-            {renderProfileIcon(icon, 26)}
-            <Text numberOfLines={1} style={styles.quickText}>{label}</Text>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+        <View style={styles.accountHero}>
+          <Pressable accessibilityRole="button" accessibilityLabel={isLoggedIn ? "Edit your profile" : "Log in to your account"} onPress={isLoggedIn ? editProfile : openLogin} style={styles.identity}>
+            <View style={styles.avatar}>{isLoggedIn && user.photo && !photoFailed ? <Image source={{ uri: user.photo }} accessibilityLabel="Your profile photo" onError={() => setPhotoFailed(true)} style={styles.photo} /> : isLoggedIn && profileInitials(user.name) ? <Text style={styles.initials}>{profileInitials(user.name)}</Text> : <Feather name="user" size={29} color="#0D7163" />}</View>
+            <View style={styles.identityCopy}><Text numberOfLines={2} style={styles.name}>{isLoggedIn ? name : "Welcome to Just Harvst"}</Text><Text style={styles.phone}>{isLoggedIn ? phone : "Log in to manage your orders and account."}</Text>{isLoggedIn ? <Text style={styles.editLink}>Edit profile</Text> : null}</View>
+            {isLoggedIn ? <Feather name="chevron-right" size={19} color="#769581" /> : null}
           </Pressable>
-        ))}
-      </View>
-
-      <Pressable onPress={() => navigation.navigate("Settings")} style={styles.appearance}>
-        <Text style={styles.sun}>☼</Text>
-        <Text style={styles.appearanceText}>Appearance</Text>
-        <Text style={styles.light}>LIGHT⌄</Text>
-      </Pressable>
-
-      <View style={styles.sensitive}>
-        <Text style={styles.hideIcon}>◉</Text>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.sensitiveTitle}>Hide sensitive items</Text>
-          <Text style={styles.sub}>Sexual wellness, nicotine products and other sensitive items will be hidden</Text>
-          <Text style={styles.know}>Know more</Text>
+          {!isLoggedIn ? <Pressable accessibilityRole="button" onPress={openLogin} style={styles.loginButton}><Text style={styles.loginText}>Log in or sign up</Text><Feather name="arrow-right" size={17} color="#FFFFFF" /></Pressable> : null}
         </View>
-        <Switch value={false} />
-      </View>
 
-      <View style={styles.infoCard}>
-        <Text style={styles.infoTitle}>Your information</Text>
-        {infoRows.map(([label, icon, route]) => (
-          <Pressable key={label} onPress={() => route && open(route)} style={styles.infoRow}>
-            {renderProfileIcon(icon, 22, styles.infoIcon)}
-            <Text style={styles.infoText}>{label}</Text>
-            <Text style={styles.chev}>›</Text>
+        <View style={styles.main}>
+          <View style={styles.quickActions}>
+            <QuickAction icon="package" title="Orders" subtitle={isLoggedIn ? `${orders.length} ${orders.length === 1 ? "order" : "orders"}` : "Track & reorder"} onPress={openOrders} />
+            <QuickAction icon="heart" title="Wishlist" subtitle="Your saved picks" onPress={openWishlist} />
+            <QuickAction icon="message-circle" title="Help" subtitle="We're here to help" onPress={() => navigation.navigate("Support")} />
+          </View>
+
+          <Pressable accessibilityRole="button" accessibilityLabel="Open Fresh Money wallet" onPress={openWallet} style={styles.walletCard}>
+            <View style={styles.walletIcon}><Ionicons name="wallet-outline" size={24} color="#0D7163" /></View>
+            <View style={styles.walletCopy}><Text style={styles.walletTitle}>Fresh Money</Text><Text style={styles.walletSubtitle}>{isLoggedIn ? "Available wallet balance" : "Log in to view your balance"}</Text></View>
+            {isLoggedIn ? <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.walletBalance}>₹{Number(walletBalance || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}</Text> : null}
+            <Feather name="chevron-right" size={19} color="#0D7163" />
           </Pressable>
-        ))}
-      </View>
 
-      <View style={styles.wallet}>
-        <Text style={styles.walletLabel}>Wallet balance</Text>
-        <Text style={styles.balance}>₹{walletBalance}</Text>
-      </View>
-
-      <Pressable onPress={() => (isLoggedIn ? dispatch(logout()) : setLoginOpen(true))} style={[styles.logout, !isLoggedIn && styles.loginButton]}>
-        <Text style={[styles.logoutText, !isLoggedIn && styles.loginText]}>{isLoggedIn ? "Logout" : "Login"}</Text>
-      </Pressable>
-      <LoginOtpSheet visible={loginOpen} onClose={() => setLoginOpen(false)} />
-      <Modal visible={birthdayOpen} transparent animationType="slide" onRequestClose={() => setBirthdayOpen(false)}>
-        <Pressable style={styles.modalOverlay} onPress={() => setBirthdayOpen(false)}>
-          <Pressable style={styles.modalCard} onPress={() => {}}>
-            <Text style={styles.modalTitle}>Add your birthday</Text>
-            <TextInput value={birthday} onChangeText={setBirthday} placeholder="DD/MM/YYYY" placeholderTextColor={colors.muted} keyboardType="numbers-and-punctuation" style={styles.modalInput} />
-            <View style={styles.modalActions}>
-              <Pressable onPress={() => setBirthdayOpen(false)} style={styles.cancelButton}>
-                <Text style={styles.cancelText}>Cancel</Text>
-              </Pressable>
-              <Pressable onPress={saveBirthday} style={styles.saveButton}>
-                <Text style={styles.saveText}>Save</Text>
-              </Pressable>
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>YOUR ACCOUNT</Text>
+            <View style={styles.group}>
+              <AccountRow icon="map-pin" title="Saved addresses" subtitle="Manage your delivery locations" onPress={() => accountAction(() => navigation.navigate("Addresses"))} />
+              <AccountRow icon="user" title="Personal details" subtitle="Name, photo and email" onPress={editProfile} divider />
+              <AccountRow icon="calendar" title="Birthday" subtitle={isLoggedIn && user.birthday ? user.birthday : "Add your birthday · optional"} onPress={openBirthday} divider />
             </View>
-          </Pressable>
-        </Pressable>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>APP & INFORMATION</Text>
+            <View style={styles.group}>{appRows.map((row, index) => <AccountRow key={row.title} icon={row.icon} title={row.title} subtitle={row.subtitle} divider={index > 0} onPress={() => row.page ? navigation.navigate("SettingsInfo", { page: row.page }) : navigation.navigate(row.route)} />)}</View>
+          </View>
+
+          {isLoggedIn ? <Pressable accessibilityRole="button" onPress={() => setLogoutOpen(true)} style={styles.logoutButton}><Feather name="log-out" size={18} color="#AA6262" /><Text style={styles.logoutText}>Log out</Text></Pressable> : null}
+          <View style={styles.brandFooter}><Text style={styles.brand}>Just Harvst</Text><Text style={styles.version}>Version {appConfig.expo.version}</Text></View>
+        </View>
+      </ScrollView>
+
+      <LoginOtpSheet visible={loginOpen} onClose={() => setLoginOpen(false)} onSuccess={() => { const action = pendingAction.current; pendingAction.current = null; action?.(); }} />
+      <LogoutConfirmation visible={logoutOpen && isLoggedIn} onClose={() => setLogoutOpen(false)} onConfirm={signOut} />
+      <Modal visible={birthdayOpen} transparent animationType="slide" statusBarTranslucent onRequestClose={() => setBirthdayOpen(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.overlay}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Dismiss birthday editor" onPress={() => setBirthdayOpen(false)} style={styles.dim} />
+          <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 18) }]}>
+            <View style={styles.sheetHeader}><View style={styles.sheetIcon}><Feather name="calendar" size={23} color="#0D7163" /></View><Pressable accessibilityRole="button" accessibilityLabel="Close birthday editor" onPress={() => setBirthdayOpen(false)} style={styles.iconButton}><Feather name="x" size={22} color="#779280" /></Pressable></View>
+            <Text style={styles.sheetTitle}>Your birthday</Text>
+            <Text style={styles.sheetCopy}>Add or update the birthday on your profile.</Text>
+            <Text style={styles.fieldLabel}>Date of birth</Text>
+            <TextInput accessibilityLabel="Birthday in day month year format" value={birthday} onChangeText={(value) => { setBirthday(formatBirthdayInput(value)); setDateError(""); }} placeholder="DD/MM/YYYY" placeholderTextColor="#687B6D" keyboardType="number-pad" maxLength={10} style={[styles.dateInput, dateError && styles.dateInputError]} />
+            {dateError ? <Text accessibilityLiveRegion="polite" style={styles.dateError}>{dateError}</Text> : null}
+            <View style={styles.sheetActions}><Pressable accessibilityRole="button" onPress={() => setBirthdayOpen(false)} style={styles.cancelButton}><Text style={styles.cancelText}>Cancel</Text></Pressable><Pressable accessibilityRole="button" onPress={saveBirthday} style={styles.saveButton}><Text style={styles.loginText}>Save birthday</Text></Pressable></View>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
-    </Screen>
+    </SafeAreaView>
   );
 }
 
-function renderProfileIcon(name, size, style) {
-  if (name === "heart") return <Ionicons name="heart-outline" size={size} color={colors.text} style={style} />;
-  if (name === "wallet") return <Ionicons name="wallet-outline" size={size} color={colors.text} style={style} />;
-  return <Feather name={name} size={size} color={colors.text} style={style} />;
+function QuickAction({ icon, title, subtitle, onPress }) {
+  return <Pressable accessibilityRole="button" accessibilityLabel={title} onPress={onPress} style={({ pressed }) => [styles.quickCard, pressed && styles.pressed]}><View style={styles.quickIcon}><Feather name={icon} size={21} color="#0D7163" /></View><Text style={styles.quickTitle}>{title}</Text><Text numberOfLines={1} style={styles.quickSubtitle}>{subtitle}</Text></Pressable>;
+}
+
+function AccountRow({ icon, title, subtitle, onPress, divider }) {
+  return <Pressable accessibilityRole="button" accessibilityLabel={title} onPress={onPress} style={({ pressed }) => [styles.accountRow, divider && styles.divider, pressed && styles.pressed]}><View style={styles.rowIcon}><Feather name={icon} size={19} color="#718F7B" /></View><View style={styles.rowCopy}><Text style={styles.rowTitle}>{title}</Text>{subtitle ? <Text style={styles.rowSubtitle}>{subtitle}</Text> : null}</View><Feather name="chevron-right" size={17} color="#9BAEA1" /></Pressable>;
 }
 
 const styles = StyleSheet.create({
-  screen: { backgroundColor: "#F4F5FA" },
-  header: { marginHorizontal: -12, marginTop: -12, minHeight: 48, paddingHorizontal: 12, flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#F7D85F" },
-  headerTitle: { color: colors.text, fontSize: type.heading, fontWeight: "600" },
-  hero: { marginHorizontal: -12, marginTop: -12, paddingTop: 12, paddingBottom: 22, paddingHorizontal: 12, alignItems: "center", backgroundColor: "#F7D85F" },
-  back: { width: 32, height: 32, borderRadius: 12, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center" },
-  avatarWrap: { width: 82, height: 82, borderRadius: 41, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center", marginTop: 12 },
-  photo: { width: 82, height: 82, borderRadius: 41 },
-  name: { marginTop: 10, color: colors.text, fontWeight: "900", fontSize: type.heading },
-  phone: { marginTop: 4, color: colors.muted, fontSize: type.subheading },
-  birthday: { marginTop: -8, minHeight: 64, borderRadius: 12, backgroundColor: "#FFF4CF", padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  birthdayTitle: { color: colors.text, fontWeight: "600", fontSize: type.heading },
-  enter: { color: colors.primary, fontWeight: "900", marginTop: 4, fontSize: type.subheading },
-  cake: { fontSize: 46 },
-  quickGrid: { flexDirection: "row", gap: 8 },
-  quickCard: { flex: 1, minHeight: 82, borderRadius: 12, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center", padding: 8 },
-  quickText: { color: colors.text, fontWeight: "900", marginTop: 6, fontSize: type.subheading },
-  appearance: { minHeight: 52, borderRadius: 12, backgroundColor: colors.surface, flexDirection: "row", alignItems: "center", paddingHorizontal: 12, gap: 10 },
-  sun: { fontSize: 32 },
-  appearanceText: { flex: 1, color: colors.text, fontWeight: "900", fontSize: type.heading },
-  light: { color: "#38415F", fontWeight: "900", fontSize: type.body },
-  sensitive: { borderRadius: 12, backgroundColor: colors.surface, flexDirection: "row", alignItems: "center", gap: 10, padding: 12 },
-  hideIcon: { width: 52, height: 52, borderRadius: 26, backgroundColor: "#F1F3F6", textAlign: "center", textAlignVertical: "center", color: colors.primary, fontSize: 26 },
-  sensitiveTitle: { color: colors.text, fontWeight: "900", fontSize: type.heading },
-  sub: { color: colors.muted, lineHeight: 15, fontSize: type.body },
-  know: { color: colors.primary, fontWeight: "900", marginTop: 2, fontSize: type.body },
-  infoCard: { backgroundColor: colors.surface, borderRadius: 12, overflow: "hidden" },
-  infoTitle: { color: colors.text, fontWeight: "900", fontSize: type.heading, padding: 12 },
-  infoRow: { minHeight: 48, borderTopWidth: 1, borderTopColor: colors.faint, flexDirection: "row", alignItems: "center", paddingHorizontal: 12, gap: 10 },
-  infoIcon: { width: 34 },
-  infoText: { flex: 1, color: colors.text, fontWeight: "800", fontSize: type.subheading },
-  chev: { color: colors.muted, fontSize: 30 },
-  wallet: { backgroundColor: "#FFF3D7", borderRadius: 12, padding: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  walletLabel: { color: colors.text, fontWeight: "900", fontSize: type.heading },
-  balance: { fontSize: type.heading, color: colors.orange, fontWeight: "900" },
-  logout: { minHeight: 44, borderRadius: 12, borderWidth: 1, borderColor: colors.danger, alignItems: "center", justifyContent: "center", backgroundColor: colors.surface },
-  logoutText: { color: colors.danger, fontWeight: "900", fontSize: type.subheading },
-  loginButton: { borderColor: colors.primary, backgroundColor: colors.primary },
-  loginText: { color: "#fff" },
-  modalOverlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.35)" },
-  modalCard: { backgroundColor: colors.surface, borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 14, gap: 12 },
-  modalTitle: { color: colors.text, fontSize: type.heading, fontWeight: "900" },
-  modalInput: { minHeight: 46, borderRadius: 12, borderWidth: 1, borderColor: colors.faint, paddingHorizontal: 12, color: colors.text, fontSize: type.subheading },
-  modalActions: { flexDirection: "row", gap: 10 },
-  cancelButton: { flex: 1, minHeight: 44, borderRadius: 12, borderWidth: 1, borderColor: colors.faint, alignItems: "center", justifyContent: "center" },
-  saveButton: { flex: 1, minHeight: 44, borderRadius: 12, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" },
-  cancelText: { color: colors.text, fontSize: type.subheading, fontWeight: "900" },
-  saveText: { color: "#fff", fontSize: type.subheading, fontWeight: "900" }
+  root: { flex: 1, backgroundColor: "#FFFFFF" },
+  header: { minHeight: 56, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 8, backgroundColor: "#FFFFFF" },
+  iconButton: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
+  headerTitle: { flex: 1, color: "#284733", fontSize: 20, fontWeight: "700" },
+  content: { backgroundColor: "#F7F9F7" },
+  accountHero: { paddingHorizontal: 18, paddingTop: 10, paddingBottom: 22, backgroundColor: "#FFFFFF", gap: 17 },
+  identity: { flexDirection: "row", alignItems: "center", gap: 14 },
+  avatar: { width: 66, height: 66, borderRadius: 23, backgroundColor: "#E9F4ED", alignItems: "center", justifyContent: "center", overflow: "hidden" },
+  photo: { width: "100%", height: "100%" },
+  initials: { color: "#0D7163", fontSize: 24, fontWeight: "700" },
+  identityCopy: { flex: 1, minWidth: 0, gap: 5 },
+  name: { color: "#24472F", fontSize: 21, lineHeight: 27, fontWeight: "800", letterSpacing: -0.4 },
+  phone: { color: "#687B6D", fontSize: 12, lineHeight: 18 },
+  editLink: { color: "#0D7163", fontSize: 11, fontWeight: "700", marginTop: 1 },
+  loginButton: { minHeight: 44, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 12, borderRadius: 12, backgroundColor: "#0D7163" },
+  loginText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700" },
+  main: { paddingHorizontal: 16, paddingTop: 18, paddingBottom: 22, gap: 20 },
+  quickActions: { flexDirection: "row", gap: 9 },
+  quickCard: { flex: 1, minWidth: 0, paddingVertical: 13, paddingHorizontal: 6, alignItems: "center", backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#E6EDE7", borderRadius: 14, gap: 6 },
+  quickIcon: { width: 36, height: 36, borderRadius: 11, backgroundColor: "#EFF7F2", alignItems: "center", justifyContent: "center", marginBottom: 2 },
+  quickTitle: { color: "#3D5F47", fontSize: 12, fontWeight: "700" },
+  quickSubtitle: { color: "#687B6D", fontSize: 10 },
+  walletCard: { flexDirection: "row", alignItems: "center", gap: 10, padding: 14, borderRadius: 15, borderWidth: 1, borderColor: "#D6E9DD", backgroundColor: "#EDF7F0" },
+  walletIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: "#DFEFE5", alignItems: "center", justifyContent: "center" },
+  walletCopy: { flex: 1, minWidth: 0, gap: 4 },
+  walletTitle: { color: "#365C43", fontSize: 13, fontWeight: "700" },
+  walletSubtitle: { color: "#687B6D", fontSize: 11, lineHeight: 15 },
+  walletBalance: { maxWidth: "40%", flexShrink: 1, color: "#0D7163", fontSize: 22, fontWeight: "800", letterSpacing: -0.5 },
+  section: { gap: 10 },
+  sectionLabel: { color: "#687B6D", fontSize: 10, letterSpacing: 1, fontWeight: "700", marginLeft: 2 },
+  group: { borderRadius: 15, borderWidth: 1, borderColor: "#E6EDE7", backgroundColor: "#FFFFFF", paddingHorizontal: 13 },
+  accountRow: { flexDirection: "row", alignItems: "center", minHeight: 58, gap: 11, paddingVertical: 12 },
+  divider: { borderTopWidth: 1, borderTopColor: "#EFF3EF" },
+  rowIcon: { width: 26, alignItems: "center" },
+  rowCopy: { flex: 1, minWidth: 0, gap: 4 },
+  rowTitle: { color: "#3F5B48", fontSize: 13, fontWeight: "600" },
+  rowSubtitle: { color: "#687B6D", fontSize: 11, lineHeight: 15 },
+  pressed: { opacity: 0.7 },
+  logoutButton: { minHeight: 46, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 9, borderRadius: 12, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#EDDCDC" },
+  logoutText: { color: "#AA6262", fontSize: 12, fontWeight: "700" },
+  brandFooter: { alignItems: "center", gap: 5, paddingVertical: 4 },
+  brand: { color: "#9CB6A3", fontSize: 18, fontWeight: "800", letterSpacing: -0.5 },
+  version: { color: "#687B6D", fontSize: 10 },
+  overlay: { flex: 1, justifyContent: "flex-end" },
+  dim: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(18,39,25,0.46)" },
+  sheet: { paddingHorizontal: 20, paddingTop: 14, gap: 12, borderTopLeftRadius: 24, borderTopRightRadius: 24, backgroundColor: "#FFFFFF" },
+  sheetHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  sheetIcon: { width: 44, height: 44, borderRadius: 13, backgroundColor: "#ECF7F0", alignItems: "center", justifyContent: "center" },
+  sheetTitle: { color: "#36583F", fontSize: 22, fontWeight: "700" },
+  sheetCopy: { color: "#687B6D", fontSize: 12, lineHeight: 18, marginBottom: 4 },
+  fieldLabel: { color: "#6E8A78", fontSize: 11, fontWeight: "600" },
+  dateInput: { height: 48, borderRadius: 12, borderWidth: 1, borderColor: "#DDEAE1", paddingHorizontal: 13, color: "#3C664A", fontSize: 15, letterSpacing: 1 },
+  dateInputError: { borderColor: "#BA7E7E" },
+  dateError: { color: "#AF6D6D", fontSize: 11, lineHeight: 17 },
+  sheetActions: { flexDirection: "row", gap: 10, marginTop: 8 },
+  cancelButton: { flex: 1, minHeight: 46, borderRadius: 12, borderWidth: 1, borderColor: "#DFEAE2", alignItems: "center", justifyContent: "center" },
+  cancelText: { color: "#687B6D", fontSize: 12, fontWeight: "700" },
+  saveButton: { flex: 1.5, minHeight: 46, borderRadius: 12, backgroundColor: "#0D7163", alignItems: "center", justifyContent: "center" }
 });
